@@ -1,13 +1,94 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Reflection;
-using System.Text;
-
-namespace 
-
+﻿namespace ASAM.MDF.Libary
 {
+    using System;
+    using System.Text;
+
+    using ASAM.MDF.Libary.Types;
+
     public class HeaderBlock : Block
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="HeaderBlock" /> class.
+        /// </summary>
+        /// <param name="mdf">The MDF.</param>
+        /// <exception cref="System.FormatException"></exception>
+        public HeaderBlock(Mdf mdf) : base(mdf)
+        {
+            var data = new byte[Size - 4];
+            var read = Mdf.Data.Read(data, 0, data.Length);
+
+            if (read != data.Length)
+                throw new FormatException();
+
+            FileComment = null;
+            ProgramBlock = null;
+
+            var ptrFirstDataGroup = BitConverter.ToUInt32(data, 0);
+            var ptrTextBlock = BitConverter.ToUInt32(data, 4);
+            var ptrProgramBlock = BitConverter.ToUInt32(data, 8);
+
+            DataGroupsCount = BitConverter.ToUInt16(data, 12);
+            Date = Encoding.UTF8.GetString(data, 14, 10);
+            Time = Encoding.UTF8.GetString(data, 24, 8);
+            Author = Encoding.UTF8.GetString(data, 32, 32);
+            Organization = Encoding.UTF8.GetString(data, 64, 32);
+            Project = Encoding.UTF8.GetString(data, 96, 32);
+            Subject = Encoding.UTF8.GetString(data, 128, 32);
+
+            // Get the current version of MDF file 
+            // and check if the property is avaible in this version
+            var requiredVersionForTimeStamp = RequiredVersion(typeof(HeaderBlock), "TimeStamp");
+            if (Mdf.IDBlock.Version >= requiredVersionForTimeStamp.Version)
+                TimeStamp = BitConverter.ToUInt64(data, 160);
+            else
+                TimeStamp = Convert.ToUInt64(requiredVersionForTimeStamp.DefaultValue);
+
+            // Get the current version of MDF file 
+            // and check if the property is avaible in this version
+            var requiredVersionForUtcTimeOffset = RequiredVersion(typeof(HeaderBlock), "UTCTimeOffset");
+            if (Mdf.IDBlock.Version >= requiredVersionForUtcTimeOffset.Version)
+                UTCTimeOffset = BitConverter.ToInt16(data, 168);
+            else
+                UTCTimeOffset = Convert.ToInt16(requiredVersionForUtcTimeOffset.DefaultValue);
+
+            // Get the current version of MDF file 
+            // and check if the property is avaible in this version
+            var requiredVersionForTimeQuality = RequiredVersion(typeof(HeaderBlock), "TimeQuality");
+            if (Mdf.IDBlock.Version >= requiredVersionForTimeQuality.Version)
+                TimeQuality = (TimeQuality)BitConverter.ToUInt16(data, 170);
+            else
+                TimeQuality = (TimeQuality)Convert.ToUInt16(requiredVersionForTimeQuality.DefaultValue);
+
+            // Get the current version of MDF file 
+            // and check if the property is avaible in this version
+            var requiredVersionForTimerIdentification = RequiredVersion(typeof(HeaderBlock), "TimerIdentification");
+            if (Mdf.IDBlock.Version >= requiredVersionForTimerIdentification.Version)
+                TimerIdentification = Encoding.UTF8.GetString(data, 172, 32);
+            else
+                TimerIdentification = requiredVersionForTimerIdentification.DefaultValue.ToString();
+
+            // Check if ptrTextBlock is null
+            if (ptrTextBlock != 0)
+            {
+                Mdf.Data.Position = ptrTextBlock;
+                FileComment = new TextBlock(mdf);
+            }
+
+            // Check if ptrProgramBlock is null
+            if (ptrProgramBlock != 0)
+            {
+                Mdf.Data.Position = ptrProgramBlock;
+                ProgramBlock = new ProgramBlock(mdf);
+            }
+
+            // Check if ptrFirstDataGroup is null
+            if (ptrFirstDataGroup != 0)
+            {
+                Mdf.Data.Position = ptrFirstDataGroup;
+                DataGroups = new DataGroupCollection(mdf, new DataGroupBlock(mdf));
+            }
+        }
+
         /// <summary>
         /// Gets the data groups.
         /// </summary>
@@ -15,7 +96,7 @@ namespace
         /// The data groups.
         /// </value>
         public DataGroupCollection DataGroups { get; private set; }
-        
+
         /// <summary>
         /// Gets the file comment.
         /// </summary>
@@ -141,86 +222,5 @@ namespace
         /// </value>
         [MdfVersion(320, "")]
         public string TimerIdentification { get; private set; }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="HeaderBlock" /> class.
-        /// </summary>
-        /// <param name="mdf">The MDF.</param>
-        /// <exception cref="System.FormatException"></exception>
-        public HeaderBlock(Mdf mdf)
-            : base(mdf)
-        {
-            byte[] data = new byte[Size - 4];
-            int read = Mdf.Data.Read(data, 0, data.Length);
-
-            if (read != data.Length)
-                throw new FormatException();
-
-            FileComment = null;
-            ProgramBlock = null;
-            uint ptrFirstDataGroup = BitConverter.ToUInt32(data, 0);
-            uint ptrTextBlock = BitConverter.ToUInt32(data, 4);
-            uint ptrProgramBlock = BitConverter.ToUInt32(data, 8);
-            DataGroupsCount = BitConverter.ToUInt16(data, 12);
-            Date = UTF8Encoding.UTF8.GetString(data, 14, 10);
-            Time = UTF8Encoding.UTF8.GetString(data, 24, 8);
-            Author = UTF8Encoding.UTF8.GetString(data, 32, 32);
-            Organization = UTF8Encoding.UTF8.GetString(data, 64, 32);
-            Project = UTF8Encoding.UTF8.GetString(data, 96, 32);
-            Subject = UTF8Encoding.UTF8.GetString(data, 128, 32);
-
-            /// Get the current version of MDF file 
-            /// and check if the property is avaible in this version
-            var _RequiredVersionForTimeStamp = (MdfVersionAttribute)Attribute.GetCustomAttribute( typeof(HeaderBlock).GetProperty("TimeStamp"), typeof(MdfVersionAttribute));
-            if (this.Mdf.IDBlock.Version >= _RequiredVersionForTimeStamp.Version)
-                TimeStamp = BitConverter.ToUInt64(data, 160);
-            else
-                TimeStamp = Convert.ToUInt64(_RequiredVersionForTimeStamp.DefaultValue);
-
-            /// Get the current version of MDF file 
-            /// and check if the property is avaible in this version
-            var _RequiredVersionForUTCTimeOffset = (MdfVersionAttribute)Attribute.GetCustomAttribute(typeof(HeaderBlock).GetProperty("UTCTimeOffset"), typeof(MdfVersionAttribute));
-            if (this.Mdf.IDBlock.Version >= _RequiredVersionForUTCTimeOffset.Version)
-                UTCTimeOffset = BitConverter.ToInt16(data, 168);
-            else
-                UTCTimeOffset = Convert.ToInt16(_RequiredVersionForUTCTimeOffset.DefaultValue);
-
-            /// Get the current version of MDF file 
-            /// and check if the property is avaible in this version
-            var _RequiredVersionForTimeQuality = (MdfVersionAttribute)Attribute.GetCustomAttribute(typeof(HeaderBlock).GetProperty("TimeQuality"), typeof(MdfVersionAttribute));
-            if (this.Mdf.IDBlock.Version >= _RequiredVersionForTimeQuality.Version)
-                TimeQuality = (TimeQuality)BitConverter.ToUInt16(data, 170);
-            else
-                TimeQuality = (TimeQuality)Convert.ToUInt16(_RequiredVersionForTimeQuality.DefaultValue);
-
-            /// Get the current version of MDF file 
-            /// and check if the property is avaible in this version
-            var _RequiredVersionForTimerIdentification = (MdfVersionAttribute)Attribute.GetCustomAttribute(typeof(HeaderBlock).GetProperty("TimerIdentification"), typeof(MdfVersionAttribute));
-            if (this.Mdf.IDBlock.Version >= _RequiredVersionForTimerIdentification.Version)
-                TimerIdentification = UTF8Encoding.UTF8.GetString(data, 172, 32);
-            else
-                TimerIdentification = _RequiredVersionForTimerIdentification.DefaultValue.ToString();
-
-			/// Check if ptrTextBlock is null
-            if (ptrTextBlock != 0)
-            {
-                Mdf.Data.Position = ptrTextBlock;
-                FileComment = new TextBlock(mdf);
-            }
-
-			/// Check if ptrProgramBlock is null
-            if (ptrProgramBlock != 0)
-            {
-                Mdf.Data.Position = ptrProgramBlock;
-                ProgramBlock = new ProgramBlock(mdf);
-            }
-
-            /// Check if ptrFirstDataGroup is null
-			if (ptrFirstDataGroup != 0)
-			{
-				Mdf.Data.Position = ptrFirstDataGroup;
-				DataGroups = new DataGroupCollection(mdf, new DataGroupBlock(mdf));
-			}
-        }
     }
 }

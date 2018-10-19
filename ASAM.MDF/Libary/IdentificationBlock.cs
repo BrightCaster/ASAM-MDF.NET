@@ -1,8 +1,10 @@
-﻿using System;
-using System.Text;
-
-namespace ASAM.MDF.Libary
+﻿namespace ASAM.MDF.Libary
 {
+    using System;
+    using System.Text;
+
+    using ASAM.MDF.Libary.Types;
+
     /// <summary>
     /// The IDBLOCK always begins at file position 0 and has a constant length 
     /// of 64 Bytes. It contains information to identify the file. This 
@@ -17,7 +19,41 @@ namespace ASAM.MDF.Libary
         private string m_Reserved1;
         private string m_Reserved2;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="IdentificationBlock"/> class.
+        /// </summary>
+        /// <param name="mdf">The MDF.</param>
+        /// <exception cref="System.ArgumentNullException">No mdf input file</exception>
+        /// <exception cref="System.FormatException"></exception>
+        public IdentificationBlock(Mdf mdf)
+        {
+            if (mdf == null)
+                throw new ArgumentNullException("No mdf input file");
+
+            Mdf = mdf;
+
+            var data = new byte[64];
+            var read = Mdf.Data.Read(data, 0, data.Length);
+
+            if (read != data.Length)
+                throw new FormatException();
+
+            m_FileIdentifier = Encoding.UTF8.GetString(data, 0, 8);
+            m_FormatIdentifier = Encoding.UTF8.GetString(data, 8, 8);
+            m_ProgramIdentifier = Encoding.UTF8.GetString(data, 16, 8);
+            ByteOrder = (ByteOrder)BitConverter.ToUInt16(data, 24);
+            FloatingPointFormat = (FloatingPointFormat)BitConverter.ToUInt16(data, 26);
+            Version = BitConverter.ToUInt16(data, 28);
+            CodePage = BitConverter.ToUInt16(data, 30);
+            m_Reserved1 = Encoding.UTF8.GetString(data, 32, 2);
+            m_Reserved2 = Encoding.UTF8.GetString(data, 34, 30);
+
+            Encoding = Encoding.GetEncoding(CodePage);
+        }
+
         public Mdf Mdf { get; private set; }
+
+        public Encoding Encoding { get; private set; }
 
         /// <summary>
         /// The file identifier always contains "MDF". ("MDF" followed by five spaces)
@@ -125,36 +161,6 @@ namespace ASAM.MDF.Libary
         {
             get { return m_Reserved2; }
             set { SetStringValue(ref m_Reserved2, value, 30); }
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="IdentificationBlock"/> class.
-        /// </summary>
-        /// <param name="mdf">The MDF.</param>
-        /// <exception cref="System.ArgumentNullException">No mdf input file</exception>
-        /// <exception cref="System.FormatException"></exception>
-        public IdentificationBlock(Mdf mdf)
-        {
-            if (mdf == null)
-                throw new ArgumentNullException("No mdf input file");
-
-            Mdf = mdf;
-
-            byte[] data = new byte[64];
-            int read = Mdf.Data.Read(data, 0, data.Length);
-
-            if (read != data.Length)
-                throw new FormatException();
-
-            m_FileIdentifier = UTF8Encoding.UTF8.GetString(data, 0, 8);
-            m_FormatIdentifier = UTF8Encoding.UTF8.GetString(data, 8, 8);
-            m_ProgramIdentifier = UTF8Encoding.UTF8.GetString(data, 16, 8);
-            ByteOrder = (ByteOrder)BitConverter.ToUInt16(data, 24);
-            FloatingPointFormat = (FloatingPointFormat)BitConverter.ToUInt16(data, 26);
-            Version = BitConverter.ToUInt16(data, 28);
-            CodePage = BitConverter.ToUInt16(data, 30);
-            m_Reserved1 = UTF8Encoding.UTF8.GetString(data, 32, 2);
-            m_Reserved2 = UTF8Encoding.UTF8.GetString(data, 34, 30);
         }
 
         /// <summary>

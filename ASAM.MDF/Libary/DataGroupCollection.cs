@@ -1,9 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-
-namespace ASAM.MDF.Libary
+﻿namespace ASAM.MDF.Libary
 {
+    using System;
+    using System.Collections.Generic;
+
     public class DataGroupCollection : IList<DataGroupBlock>
     {
         public Mdf Mdf { get; private set; }
@@ -19,8 +18,8 @@ namespace ASAM.MDF.Libary
                 throw new ArgumentNullException("dgBlock");
             Mdf = mdf;
 
-			first = dgBlock;
-			lDataGroupBlock = Common.BuildBlockList(this.lDataGroupBlock, this.first);
+            first = dgBlock;
+            lDataGroupBlock = Common.BuildBlockList(this.lDataGroupBlock, this.first);
         }
 
         public int IndexOf(DataGroupBlock item)
@@ -76,12 +75,12 @@ namespace ASAM.MDF.Libary
         }
         public IEnumerator<DataGroupBlock> GetEnumerator()
         {
-			return this.lDataGroupBlock.GetEnumerator();
+            return this.lDataGroupBlock.GetEnumerator();
         }
         System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
         {
             throw new NotImplementedException();
         }
-     
+
     }
 }

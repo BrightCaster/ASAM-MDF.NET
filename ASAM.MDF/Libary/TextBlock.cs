@@ -1,11 +1,23 @@
-﻿using System;
-using System.Text;
-
-namespace ASAM.MDF.Libary
+﻿namespace ASAM.MDF.Libary
 {
+    using System;
+    using System.Text;
+
     public class TextBlock : Block
     {
         private string m_Text;
+
+        public TextBlock(Mdf mdf) : base(mdf)
+        {
+            var data = new byte[Size - 4];
+            var read = Mdf.Data.Read(data, 0, data.Length);
+
+            if (read != data.Length)
+                throw new FormatException();
+
+            m_Text = Mdf.IDBlock.Encoding.GetString(data, 0, data.Length);
+        }
+
         public string Text
         {
             get
@@ -17,7 +29,7 @@ namespace ASAM.MDF.Libary
                 SetStringValue(ref m_Text, value, ushort.MaxValue - 4);
             }
         }
-        
+
         public static implicit operator string(TextBlock textBlock)
         {
             if (textBlock == null)
@@ -30,19 +42,7 @@ namespace ASAM.MDF.Libary
             if (text == null)
                 return null;
 
-			return text;
-        }
-
-        public TextBlock(Mdf mdf)
-            : base(mdf)
-        {
-            byte[] data = new byte[Size - 4];
-            int read = Mdf.Data.Read(data, 0, data.Length);
-
-            if (read != data.Length)
-                throw new FormatException();
-
-            m_Text = Encoding.GetEncoding(Mdf.IDBlock.CodePage).GetString(data, 0, data.Length);
+            return text;
         }
     }
 }

@@ -1,20 +1,14 @@
-﻿using System;
-using System.Text;
-
-namespace ASAM.MDF.Libary
+﻿namespace ASAM.MDF.Libary
 {
+    using System;
+    using System.Text;
+
     /// <summary>
     /// The abstract block class
     /// </summary>
     public abstract class Block
     {
-        public Mdf Mdf { get; private set; }
-
-        public ushort Size { get; private set; }
-        public uint BlockAddress { get; private set; }
-        public string Identifier { get; protected set; }
-  
-        public Block(Mdf mdf)
+        protected Block(Mdf mdf)
         {
             if (mdf == null)
                 throw new ArgumentNullException("mdf");
@@ -22,19 +16,25 @@ namespace ASAM.MDF.Libary
             Mdf = mdf;
             BlockAddress = (uint)Mdf.Data.Position;
 
-            byte[] data = new byte[4];
-            int read = Mdf.Data.Read(data, 0, data.Length);
+            var data = new byte[4];
+            var read = Mdf.Data.Read(data, 0, data.Length);
 
             if (read != data.Length)
                 throw new FormatException();
 
-            Identifier = Encoding.GetEncoding(Mdf.IDBlock.CodePage).GetString(data, 0, 2);
+            Identifier = Mdf.IDBlock.Encoding.GetString(data, 0, 2);
             Size = BitConverter.ToUInt16(data, 2);
 
             if (Size <= 4)
                 throw new FormatException();
         }
 
+        public Mdf Mdf { get; private set; }
+
+        public ushort Size { get; private set; }
+        public uint BlockAddress { get; private set; }
+        public string Identifier { get; protected set; }
+  
         /// <summary>
         /// Sets the string value.
         /// </summary>
@@ -57,6 +57,14 @@ namespace ASAM.MDF.Libary
 
                 target = value;
             }
+        }
+
+        protected MdfVersionAttribute RequiredVersion(Type type, string property)
+        {
+            if (type == null)
+                throw new ArgumentNullException("type");
+
+            return (MdfVersionAttribute)Attribute.GetCustomAttribute(type.GetProperty(property), typeof(MdfVersionAttribute));
         }
     }
 }

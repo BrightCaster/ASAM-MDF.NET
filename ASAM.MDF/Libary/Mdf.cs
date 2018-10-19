@@ -1,16 +1,10 @@
-﻿using System;
-using System.IO;
-
-namespace ASAM.MDF.Libary
+﻿namespace ASAM.MDF.Libary
 {
+    using System;
+    using System.IO;
+
     public class Mdf
     {
-        internal Stream Data { get; private set; }
-        internal BlockCache Cache { get; private set; }
-        public bool ReadOnly { get { return !Data.CanRead; } }
-        public IdentificationBlock IDBlock { get; private set; }
-        public HeaderBlock HDBlock { get; private set; }
-
         public Mdf(Stream stream)
         {
             if (stream == null)
@@ -24,6 +18,19 @@ namespace ASAM.MDF.Libary
             HDBlock = new HeaderBlock(this);
         }
 
-      
+        public bool ReadOnly { get { return !Data.CanRead; } }
+
+        /// <summary>
+        /// File identification.
+        /// </summary>
+        public IdentificationBlock IDBlock { get; private set; }
+
+        /// <summary>
+        /// File header.
+        /// </summary>
+        public HeaderBlock HDBlock { get; private set; }
+
+        internal Stream Data { get; private set; }
+        internal BlockCache Cache { get; private set; }
     }
 }

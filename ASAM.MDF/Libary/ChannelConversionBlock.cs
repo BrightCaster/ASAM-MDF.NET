@@ -2,6 +2,8 @@
 
 namespace ASAM.MDF.Libary
 {
+    using ASAM.MDF.Libary.Types;
+
     /// <summary>
     /// TODO: Incomplete
     /// </summary>

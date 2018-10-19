@@ -3,6 +3,8 @@ using System.Text;
 
 namespace ASAM.MDF.Libary
 {
+    using ASAM.MDF.Libary.Types;
+
     public class ChannelExtensionBlock : Block
     {
         public ExtensionType Type { get; private set; }

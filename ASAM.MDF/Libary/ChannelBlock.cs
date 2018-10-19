@@ -1,23 +1,25 @@
-﻿using System;
-using System.Text;
-
-namespace ASAM.MDF.Libary
+﻿namespace ASAM.MDF.Libary
 {
+    using System;
+    using System.Text;
+
+    using ASAM.MDF.Libary.Types;
+
     public class ChannelBlock : Block, INext<ChannelBlock>
     {
         private ChannelBlock m_Next;
         public ChannelBlock Next
         {
-          get
-          {
-            if (m_Next == null && m_ptrNextChannelBlock != 0)
+            get
             {
-              Mdf.Data.Position = m_ptrNextChannelBlock;
-              m_Next = new ChannelBlock(Mdf);
-            }
+                if (m_Next == null && m_ptrNextChannelBlock != 0)
+                {
+                    Mdf.Data.Position = m_ptrNextChannelBlock;
+                    m_Next = new ChannelBlock(Mdf);
+                }
 
-            return m_Next;
-          }
+                return m_Next;
+            }
         }
 
         public ChannelConversionBlock ChannelConversion { get; private set; }
@@ -41,7 +43,7 @@ namespace ASAM.MDF.Libary
         [MdfVersion(300, 0)]
         public UInt16 AdditionalByteOffset { get; private set; }
 
-        
+
         private uint m_ptrNextChannelBlock;
         private uint m_ptrChannelConversionBlock;
         private uint m_ptrChannelExtensionBlock;
@@ -49,15 +51,14 @@ namespace ASAM.MDF.Libary
         private uint m_ptrChannelComment;
         private uint m_ptrLongSignalName;
         private uint m_ptrDisplayName;
-                
-        public ChannelBlock(Mdf mdf)
-          : base(mdf)
+
+        public ChannelBlock(Mdf mdf) : base(mdf)
         {
-            byte[] data = new byte[Size - 4];
-            int read = Mdf.Data.Read(data, 0, data.Length);
+            var data = new byte[Size - 4];
+            var read = Mdf.Data.Read(data, 0, data.Length);
 
             if (read != data.Length)
-              throw new FormatException();
+                throw new FormatException();
 
             m_Next = null;
             ChannelConversion = null;
@@ -71,30 +72,42 @@ namespace ASAM.MDF.Libary
             m_ptrChannelDependencyBlock = BitConverter.ToUInt32(data, 12);
             m_ptrChannelComment = BitConverter.ToUInt32(data, 16);
             Type = (ChannelType)BitConverter.ToUInt16(data, 20);
-            SignalName = Encoding.GetEncoding(Mdf.IDBlock.CodePage).GetString(data, 22, 32);
-            SignalDescription = Encoding.GetEncoding(Mdf.IDBlock.CodePage).GetString(data, 64, 128);
-            BitOffset = BitConverter.ToUInt16(data, 192);
-            NumberOfBits = BitConverter.ToUInt16(data, 194);
-            SignalType = (SignalType)BitConverter.ToUInt16(data, 196);
-            ValueRange = BitConverter.ToBoolean(data, 198);
+            SignalName = Mdf.IDBlock.Encoding.GetString(data, 22, 32);
+            SignalDescription = Mdf.IDBlock.Encoding.GetString(data, 54, 128);
+            BitOffset = BitConverter.ToUInt16(data, 182);
+            NumberOfBits = BitConverter.ToUInt16(data, 184);
+            SignalType = (SignalType)BitConverter.ToUInt16(data, 186);
+            ValueRange = BitConverter.ToBoolean(data, 188);
             if (ValueRange)
-            { 
-                MinValue = BitConverter.ToDouble(data, 200);
-                MaxValue = BitConverter.ToDouble(data, 202);
+            {
+                MinValue = BitConverter.ToDouble(data, 190);
+                MaxValue = BitConverter.ToDouble(data, 198);
             }
-            
-            SampleRate = BitConverter.ToDouble(data, 204);
-            m_ptrLongSignalName = BitConverter.ToUInt32(data, 206);
-            m_ptrDisplayName = BitConverter.ToUInt32(data, 210);
-            AdditionalByteOffset = BitConverter.ToUInt16(data, 214);
+
+            SampleRate = BitConverter.ToDouble(data, 206);
+
+            var requiredVersionLongSignalName = RequiredVersion(typeof(ChannelBlock), "LongSignalName");
+            if (requiredVersionLongSignalName != null && requiredVersionLongSignalName.Version <= Mdf.IDBlock.Version)
+                m_ptrLongSignalName = BitConverter.ToUInt32(data, 214);
+
+            var requiredVersionDisplayName = RequiredVersion(typeof(ChannelBlock), "DisplayName");
+            if (requiredVersionDisplayName != null && requiredVersionDisplayName.Version <= Mdf.IDBlock.Version)
+                m_ptrDisplayName = BitConverter.ToUInt32(data, 218);
+
+            var requiredVersionAdditionalByteOffset = RequiredVersion(typeof(ChannelBlock), "AdditionalByteOffset");
+            if (requiredVersionAdditionalByteOffset != null && requiredVersionAdditionalByteOffset.Version <= Mdf.IDBlock.Version)
+                AdditionalByteOffset = BitConverter.ToUInt16(data, 222);
 
             if (m_ptrChannelExtensionBlock != 0)
             {
-              mdf.Data.Position = m_ptrChannelExtensionBlock;
-              SourceDepending = new ChannelExtensionBlock(mdf);
+                mdf.Data.Position = m_ptrChannelExtensionBlock;
+                SourceDepending = new ChannelExtensionBlock(mdf);
             }
+        }
 
-
+        public override string ToString()
+        {
+            return SignalName;
         }
     }
 }
