@@ -12,7 +12,8 @@
             var filename1 = "..\\..\\ASAP2_Demo_V161_2.00.dat";
             var filename2 = "..\\..\\AVL_2042.dat";
             var filename3 = "..\\..\\measure05.dat";
-            using (var stream = new FileStream(filename2, FileMode.Open))
+
+            using (var stream = new FileStream(filename3, FileMode.Open))
             {
                 var mdf = new Mdf(stream);
 
@@ -32,7 +33,15 @@
                         for (int j = 0; j < chGroup.NumChannels; j++)
                         {
                             var ch = chGroup.Channels[j];
-                            Console.WriteLine("\t" + ch.SignalName + "(" + ch.BitOffset + ")" + "\t" + ch.SignalType);
+                            Console.WriteLine("\t" + ch.SignalName + "(" + ch.BitOffset / 8 + " + " + ch.AdditionalByteOffset + ")" + "\t" + ch.SignalType);
+
+                            Console.Write("\tValues: ");
+                            for (int r = 0; r < records.Length; r++)
+                            {
+                                Console.Write(records[r].GetValue(ch) + "; ");
+                            }
+
+                            Console.WriteLine();
                         }
                     }
 

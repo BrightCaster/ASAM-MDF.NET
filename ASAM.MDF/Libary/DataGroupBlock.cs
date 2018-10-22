@@ -87,7 +87,7 @@
                         if (read != recordData.Length)
                             throw new FormatException();
 
-                        records.Add(new DataRecord(recordData));
+                        records.Add(new DataRecord(group, recordData));
                     }
                 }
 

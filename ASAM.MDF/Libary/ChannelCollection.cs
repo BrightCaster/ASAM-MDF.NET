@@ -1,74 +1,27 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace ASAM.MDF.Libary
+﻿namespace ASAM.MDF.Libary
 {
+    using System;
+    using System.Collections.Generic;
+
     public class ChannelCollection : IList<ChannelBlock>
     {
-        public Mdf Mdf { get; private set; }
         private ChannelBlock first;
         private List<ChannelBlock> lChannelBlock;
 
         public ChannelCollection(Mdf mdf, ChannelBlock cnBlock)
         {
-          if (mdf == null)
-            throw new ArgumentNullException("mdf");
+            if (mdf == null)
+                throw new ArgumentNullException("mdf");
 
-          if (cnBlock == null)
-            throw new ArgumentNullException("cnBlock");
-          Mdf = mdf;
+            if (cnBlock == null)
+                throw new ArgumentNullException("cnBlock");
+            Mdf = mdf;
 
-          first = cnBlock;
-		  lChannelBlock = Common.BuildBlockList(this.lChannelBlock, this.first);
+            first = cnBlock;
+            lChannelBlock = Common.BuildBlockList(this.lChannelBlock, this.first);
         }
 
-        public int IndexOf(ChannelBlock item)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Insert(int index, ChannelBlock item)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void RemoveAt(int index)
-        {
-            throw new NotImplementedException();
-        }
-
-        public ChannelBlock this[int index]
-        {
-            get
-            {
-				return this.lChannelBlock[index];
-            }
-            set
-            {
-                throw new NotImplementedException();
-            }
-        }
-
-        public void Add(ChannelBlock item)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Clear()
-        {
-            throw new NotImplementedException();
-        }
-
-        public bool Contains(ChannelBlock item)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void CopyTo(ChannelBlock[] array, int arrayIndex)
-        {
-            throw new NotImplementedException();
-        }
-
+        public Mdf Mdf { get; private set; }
         public int Count
         {
             get { throw new NotImplementedException(); }
@@ -79,6 +32,46 @@ namespace ASAM.MDF.Libary
             get { throw new NotImplementedException(); }
         }
 
+        public ChannelBlock this[int index]
+        {
+            get
+            {
+                return this.lChannelBlock[index];
+            }
+            set
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        public int IndexOf(ChannelBlock item)
+        {
+            throw new NotImplementedException();
+        }
+        public void Insert(int index, ChannelBlock item)
+        {
+            throw new NotImplementedException();
+        }
+        public void RemoveAt(int index)
+        {
+            throw new NotImplementedException();
+        }
+        public void Add(ChannelBlock item)
+        {
+            throw new NotImplementedException();
+        }
+        public void Clear()
+        {
+            throw new NotImplementedException();
+        }
+        public bool Contains(ChannelBlock item)
+        {
+            return lChannelBlock.Contains(item);
+        }
+        public void CopyTo(ChannelBlock[] array, int arrayIndex)
+        {
+            throw new NotImplementedException();
+        }
         public bool Remove(ChannelBlock item)
         {
             throw new NotImplementedException();
@@ -86,7 +79,7 @@ namespace ASAM.MDF.Libary
 
         public IEnumerator<ChannelBlock> GetEnumerator()
         {
-			return this.lChannelBlock.GetEnumerator();
+            return this.lChannelBlock.GetEnumerator();
         }
 
         System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
