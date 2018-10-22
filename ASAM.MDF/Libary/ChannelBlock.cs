@@ -7,43 +7,6 @@
 
     public class ChannelBlock : Block, INext<ChannelBlock>
     {
-        private ChannelBlock m_Next;
-        public ChannelBlock Next
-        {
-            get
-            {
-                if (m_Next == null && m_ptrNextChannelBlock != 0)
-                {
-                    Mdf.Data.Position = m_ptrNextChannelBlock;
-                    m_Next = new ChannelBlock(Mdf);
-                }
-
-                return m_Next;
-            }
-        }
-
-        public ChannelConversionBlock ChannelConversion { get; private set; }
-        public ChannelExtensionBlock SourceDepending { get; private set; }
-        public ChannelDependencyBlock Dependency { get; private set; }
-        public TextBlock Comment { get; private set; }
-        public ChannelType Type { get; private set; }
-        public string SignalName { get; private set; }
-        public string SignalDescription { get; private set; }
-        public UInt16 BitOffset { get; private set; }
-        public UInt16 NumberOfBits { get; private set; }
-        public SignalType SignalType { get; private set; }
-        public bool ValueRange { get; private set; }
-        public double MinValue { get; private set; }
-        public double MaxValue { get; private set; }
-        public double SampleRate { get; private set; }
-        [MdfVersion(212, null)]
-        public TextBlock LongSignalName { get; private set; }
-        [MdfVersion(300, null)]
-        public TextBlock DisplayName { get; private set; }
-        [MdfVersion(300, 0)]
-        public UInt16 AdditionalByteOffset { get; private set; }
-
-
         private uint m_ptrNextChannelBlock;
         private uint m_ptrChannelConversionBlock;
         private uint m_ptrChannelExtensionBlock;
@@ -51,6 +14,10 @@
         private uint m_ptrChannelComment;
         private uint m_ptrLongSignalName;
         private uint m_ptrDisplayName;
+
+        private ChannelConversionBlock channelConversion;
+
+        private ChannelBlock m_Next;
 
         public ChannelBlock(Mdf mdf) : base(mdf)
         {
@@ -61,7 +28,6 @@
                 throw new FormatException();
 
             m_Next = null;
-            ChannelConversion = null;
             SourceDepending = null;
             Dependency = null;
             Comment = null;
@@ -104,6 +70,52 @@
                 SourceDepending = new ChannelExtensionBlock(mdf);
             }
         }
+
+        public ChannelBlock Next
+        {
+            get
+            {
+                if (m_Next == null && m_ptrNextChannelBlock != 0)
+                {
+                    Mdf.Data.Position = m_ptrNextChannelBlock;
+                    m_Next = new ChannelBlock(Mdf);
+                }
+
+                return m_Next;
+            }
+        }
+        public ChannelConversionBlock ChannelConversion
+        {
+            get
+            {
+                if (channelConversion == null && m_ptrChannelConversionBlock != 0)
+                {
+                    Mdf.Data.Position = m_ptrChannelConversionBlock;
+                    channelConversion = new ChannelConversionBlock(Mdf);
+                }
+
+                return channelConversion;
+            }
+        }
+        public ChannelExtensionBlock SourceDepending { get; private set; }
+        public ChannelDependencyBlock Dependency { get; private set; }
+        public TextBlock Comment { get; private set; }
+        public ChannelType Type { get; private set; }
+        public string SignalName { get; private set; }
+        public string SignalDescription { get; private set; }
+        public ushort BitOffset { get; private set; }
+        public ushort NumberOfBits { get; private set; }
+        public SignalType SignalType { get; private set; }
+        public bool ValueRange { get; private set; }
+        public double MinValue { get; private set; }
+        public double MaxValue { get; private set; }
+        public double SampleRate { get; private set; }
+        [MdfVersion(212, null)]
+        public TextBlock LongSignalName { get; private set; }
+        [MdfVersion(300, null)]
+        public TextBlock DisplayName { get; private set; }
+        [MdfVersion(300, 0)]
+        public ushort AdditionalByteOffset { get; private set; }
 
         public override string ToString()
         {
