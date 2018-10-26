@@ -1,6 +1,7 @@
 ﻿namespace ASAM.MDF.Libary
 {
     using System;
+    using System.IO;
     using System.Text;
 
     using ASAM.MDF.Libary.Types;
@@ -13,42 +14,15 @@
     /// </summary>
     public class IdentificationBlock
     {
-        private string m_FileIdentifier;
-        private string m_FormatIdentifier;
-        private string m_ProgramIdentifier;
-        private string m_Reserved1;
-        private string m_Reserved2;
+        private ushort codePage;
+        private string fileIdentifier;
+        private string formatIdentifier;
+        private string programIdentifier;
+        private string reserved1;
+        private string reserved2;
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="IdentificationBlock"/> class.
-        /// </summary>
-        /// <param name="mdf">The MDF.</param>
-        /// <exception cref="System.ArgumentNullException">No mdf input file</exception>
-        /// <exception cref="System.FormatException"></exception>
-        public IdentificationBlock(Mdf mdf)
+        private IdentificationBlock()
         {
-            if (mdf == null)
-                throw new ArgumentNullException("No mdf input file");
-
-            Mdf = mdf;
-
-            var data = new byte[64];
-            var read = Mdf.Data.Read(data, 0, data.Length);
-
-            if (read != data.Length)
-                throw new FormatException();
-
-            m_FileIdentifier = Encoding.UTF8.GetString(data, 0, 8);
-            m_FormatIdentifier = Encoding.UTF8.GetString(data, 8, 8);
-            m_ProgramIdentifier = Encoding.UTF8.GetString(data, 16, 8);
-            ByteOrder = (ByteOrder)BitConverter.ToUInt16(data, 24);
-            FloatingPointFormat = (FloatingPointFormat)BitConverter.ToUInt16(data, 26);
-            Version = BitConverter.ToUInt16(data, 28);
-            CodePage = BitConverter.ToUInt16(data, 30);
-            m_Reserved1 = Encoding.UTF8.GetString(data, 32, 2);
-            m_Reserved2 = Encoding.UTF8.GetString(data, 34, 30);
-
-            Encoding = Encoding.GetEncoding(CodePage);
         }
 
         public Mdf Mdf { get; private set; }
@@ -63,8 +37,8 @@
         /// </value>
         public string FileIdentifier
         {
-            get { return m_FileIdentifier; }
-            set { SetStringValue(ref m_FileIdentifier, value, 8); }
+            get { return fileIdentifier; }
+            set { SetStringValue(ref fileIdentifier, value, 8); }
         }
 
         /// <summary>
@@ -77,8 +51,8 @@
         /// </value>
         public string FormatIdentifier
         {
-            get { return m_FormatIdentifier; }
-            set { SetStringValue(ref m_FormatIdentifier, value, 8); }
+            get { return formatIdentifier; }
+            set { SetStringValue(ref formatIdentifier, value, 8); }
         }
 
         /// <summary>
@@ -89,8 +63,8 @@
         /// </value>
         public string ProgramIdentifier
         {
-            get { return m_ProgramIdentifier; }
-            set { SetStringValue(ref m_ProgramIdentifier, value, 8); }
+            get { return programIdentifier; }
+            set { SetStringValue(ref programIdentifier, value, 8); }
         }
 
         /// <summary>
@@ -102,7 +76,7 @@
         /// <value>
         /// The byte order.
         /// </value>
-        public ByteOrder ByteOrder { get; private set; }
+        public ByteOrder ByteOrder { get; set; }
 
         /// <summary>
         /// Gets the floating point format.
@@ -114,16 +88,16 @@
         /// <value>
         /// The floating-point format.
         /// </value>
-        public FloatingPointFormat FloatingPointFormat { get; private set; }
-        
+        public FloatingPointFormat FloatingPointFormat { get; set; }
+
         /// <summary>
         /// Version number of MDF format, i.e. 330 for this version
         /// </summary>
         /// <value>
         /// The version.
         /// </value>
-        public ushort Version { get; private set; }
-        
+        public ushort Version { get; set; }
+
         // TODO: Add supported CodePages
         /// <summary>
         /// Code Page number
@@ -137,8 +111,19 @@
         /// The code page.
         /// </value>
         [MdfVersion(330, 0)]
-        public ushort CodePage { get; private set; }
-        
+        public ushort CodePage
+        {
+            get { return codePage; }
+            set
+            {
+                if (codePage == value)
+                    return;
+
+                codePage = value;
+                Encoding = value == 0 ? Encoding.ASCII : Encoding.GetEncoding(value);
+            }
+        }
+
         /// <summary>
         /// Gets or sets the reserved1.
         /// </summary>
@@ -147,8 +132,8 @@
         /// </value>
         public string Reserved1
         {
-            get { return m_Reserved1; }
-            set { SetStringValue(ref m_Reserved1, value, 2); }
+            get { return reserved1; }
+            set { SetStringValue(ref reserved1, value, 2); }
         }
 
         /// <summary>
@@ -159,8 +144,78 @@
         /// </value>
         public string Reserved2
         {
-            get { return m_Reserved2; }
-            set { SetStringValue(ref m_Reserved2, value, 30); }
+            get { return reserved2; }
+            set { SetStringValue(ref reserved2, value, 30); }
+        }
+
+        public static IdentificationBlock Create(Mdf mdf)
+        {
+            var block = new IdentificationBlock();
+
+            block.Mdf = mdf;
+            block.FileIdentifier = "MDF     ";
+            block.FormatIdentifier = "3.30";
+            block.ProgramIdentifier = "";
+            block.ByteOrder = ByteOrder.LittleEndian;
+            block.FloatingPointFormat = FloatingPointFormat.IEEE754;
+            block.Version = 330;
+            block.CodePage = 0;
+            block.Reserved1 = "";
+            block.Reserved2 = "";
+
+            return block;
+        }
+        public static IdentificationBlock Read(Mdf mdf, Stream stream)
+        {
+            var data = new byte[64];
+            var read = stream.Read(data, 0, data.Length);
+
+            if (read != data.Length)
+                throw new FormatException();
+
+            var block = new IdentificationBlock();
+
+            block.Mdf = mdf;
+            block.fileIdentifier = Encoding.UTF8.GetString(data, 0, 8);
+            block.formatIdentifier = Encoding.UTF8.GetString(data, 8, 8);
+            block.programIdentifier = Encoding.UTF8.GetString(data, 16, 8);
+            block.ByteOrder = (ByteOrder)BitConverter.ToUInt16(data, 24);
+            block.FloatingPointFormat = (FloatingPointFormat)BitConverter.ToUInt16(data, 26);
+            block.Version = BitConverter.ToUInt16(data, 28);
+            block.CodePage = BitConverter.ToUInt16(data, 30);
+            block.reserved1 = Encoding.UTF8.GetString(data, 32, 2);
+            block.reserved2 = Encoding.UTF8.GetString(data, 34, 30);
+
+            return block;
+        }
+
+        internal int GetSize()
+        {
+            return 64;
+        }
+        internal void Write(byte[] array, ref int index)
+        {
+            var bytesFileIdentifier = Encoding.UTF8.GetBytes(FileIdentifier);
+            var bytesFormatIdentifier = Encoding.UTF8.GetBytes(FormatIdentifier);
+            var bytesProgramIdentifier = Encoding.UTF8.GetBytes(ProgramIdentifier);
+            var bytesByteOrder = BitConverter.GetBytes((ushort)ByteOrder);
+            var bytesFloatingPointFormat = BitConverter.GetBytes((ushort)FloatingPointFormat);
+            var bytesVersion = BitConverter.GetBytes(Version);
+            var bytesCodePage = BitConverter.GetBytes(CodePage);
+            var bytesReserved1 = Encoding.UTF8.GetBytes(Reserved1);
+            var bytesReserved2 = Encoding.UTF8.GetBytes(Reserved2);
+
+            Array.Copy(bytesFileIdentifier, 0, array, index, bytesFileIdentifier.Length);
+            Array.Copy(bytesFormatIdentifier, 0, array, index + 8, bytesFormatIdentifier.Length);
+            Array.Copy(bytesProgramIdentifier, 0, array, index + 16, bytesProgramIdentifier.Length);
+            Array.Copy(bytesByteOrder, 0, array, index + 24, bytesByteOrder.Length);
+            Array.Copy(bytesFloatingPointFormat, 0, array, index + 26, bytesFloatingPointFormat.Length);
+            Array.Copy(bytesVersion, 0, array, index + 28, bytesVersion.Length);
+            Array.Copy(bytesCodePage, 0, array, index + 30, bytesCodePage.Length);
+            Array.Copy(bytesReserved1, 0, array, index + 32, bytesReserved1.Length);
+            Array.Copy(bytesReserved2, 0, array, index + 34, bytesReserved2.Length);
+
+            index += GetSize();
         }
 
         /// <summary>

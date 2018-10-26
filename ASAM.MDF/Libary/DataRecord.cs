@@ -1,4 +1,4 @@
-﻿namespace Mdf
+﻿namespace ASAM.MDF.Libary
 {
     using System;
     using System.Collections;

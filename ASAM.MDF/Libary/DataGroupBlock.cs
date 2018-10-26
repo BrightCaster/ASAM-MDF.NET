@@ -2,70 +2,29 @@
 {
     using System;
     using System.Collections.Generic;
-
-    using global::Mdf;
+    using System.IO;
 
     public class DataGroupBlock : Block, INext<DataGroupBlock>
     {
-        private DataGroupBlock m_Next;
-        private uint m_ptrNextDataGroup;
-        private uint m_ptrFirstChannelGroupBlock;
-        private uint m_ptrTriggerBlock;
-        public uint m_ptrDataBlock;
+        private Stream stream;
+        private DataGroupBlock nextBlock;
+        private uint ptrNextDataGroup;
+        private uint ptrFirstChannelGroupBlock;
+        private uint ptrTriggerBlock;
+        private uint ptrDataBlock;
 
-        public DataGroupBlock(Mdf mdf) : base(mdf)
+        private DataGroupBlock(Mdf mdf) : base(mdf)
         {
-            var data = new byte[Size - 4];
-            var read = Mdf.Data.Read(data, 0, data.Length);
-
-            if (read != data.Length)
-                throw new FormatException();
-
-            m_Next = null;
-            ChannelGroups = null;
-            Trigger = null;
-            Reserved = 0;
-
-            m_ptrNextDataGroup = BitConverter.ToUInt32(data, 0);
-            m_ptrFirstChannelGroupBlock = BitConverter.ToUInt32(data, 4);
-            m_ptrTriggerBlock = BitConverter.ToUInt32(data, 8);
-            m_ptrDataBlock = BitConverter.ToUInt32(data, 12);
-            NumChannelGroups = BitConverter.ToUInt16(data, 16);
-            NumRecordIds = BitConverter.ToUInt16(data, 18);
-
-            if (data.Length >= 24)
-                Reserved = BitConverter.ToUInt32(data, 20);
-
-            Mdf.Data.Position = m_ptrFirstChannelGroupBlock;
-
-            ChannelGroups = new ChannelGroupCollection(mdf, new ChannelGroupBlock(mdf));
-
-            /// TODO: Call Trigger Blocks
-            //if (m_ptrTriggerBlock != 0)
-            //{
-            //    Mdf.Data.Position = m_ptrTriggerBlock;
-            //    Trigger = new TriggerBlock(mdf);
-            //}
-
-            /// TODO: Call ProgramsBlock ?
-            //if (ptrProgramBlock != 0)
-            //{
-            //    Mdf.Data.Position = ptrProgramBlock;
-            //    ProgramBlock = new ProgramBlock(mdf);
-            //}
         }
 
         public DataGroupBlock Next
         {
             get
             {
-                if (m_Next == null && m_ptrNextDataGroup != 0)
-                {
-                    Mdf.Data.Position = m_ptrNextDataGroup;
-                    m_Next = new DataGroupBlock(Mdf);
-                }
+                if (nextBlock == null && ptrNextDataGroup != 0)
+                    nextBlock = Read(Mdf, stream, ptrNextDataGroup);
 
-                return m_Next;
+                return nextBlock;
             }
         }
         public ChannelGroupCollection ChannelGroups { get; private set; }
@@ -73,7 +32,7 @@
         {
             get
             {
-                Mdf.Data.Position = m_ptrDataBlock;
+                Mdf.Data.Position = ptrDataBlock;
 
                 var records = new List<DataRecord>();
 
@@ -104,6 +63,87 @@
         /// 2 = record ID(UINT8) before and after each data record
         /// </summary>
         public ushort NumRecordIds { get; private set; }
-        public uint Reserved { get; private set; }
+        public uint Reserved { get; set; }
+
+        public static DataGroupBlock Create(Mdf mdf)
+        {
+            var block = new DataGroupBlock(mdf);
+            block.Identifier = "DG";
+            
+            return block;
+        }
+        public static DataGroupBlock Read(Mdf mdf, Stream stream, uint position)
+        {
+            stream.Position = position;
+
+            var block = new DataGroupBlock(mdf);
+            block.Read(stream);
+            block.stream = stream;
+
+            var data = new byte[block.Size - 4];
+            var read = stream.Read(data, 0, data.Length);
+
+            if (read != data.Length)
+                throw new FormatException();
+
+            block.nextBlock = null;
+            block.ChannelGroups = null;
+            block.Trigger = null;
+            block.Reserved = 0;
+
+            block.ptrNextDataGroup = BitConverter.ToUInt32(data, 0);
+            block.ptrFirstChannelGroupBlock = BitConverter.ToUInt32(data, 4);
+            block.ptrTriggerBlock = BitConverter.ToUInt32(data, 8);
+            block.ptrDataBlock = BitConverter.ToUInt32(data, 12);
+            block.NumChannelGroups = BitConverter.ToUInt16(data, 16);
+            block.NumRecordIds = BitConverter.ToUInt16(data, 18);
+
+            if (data.Length >= 24)
+                block.Reserved = BitConverter.ToUInt32(data, 20);
+
+            //stream.Position = block.ptrFirstChannelGroupBlock;
+            //block.ChannelGroups = new ChannelGroupCollection(mdf, new ChannelGroupBlock(mdf));
+
+            /// TODO: Call Trigger Blocks
+            //if (m_ptrTriggerBlock != 0)
+            //{
+            //    Mdf.Data.Position = m_ptrTriggerBlock;
+            //    Trigger = new TriggerBlock(mdf);
+            //}
+
+            /// TODO: Call ProgramsBlock ?
+            //if (ptrProgramBlock != 0)
+            //{
+            //    Mdf.Data.Position = ptrProgramBlock;
+            //    ProgramBlock = new ProgramBlock(mdf);
+            //}
+
+            return block;
+        }
+
+        internal override ushort GetSize()
+        {
+            return 28;
+        }
+        internal override void Write(byte[] array, ref int index)
+        {
+            base.Write(array, ref index);
+
+            var bytesNumChannelGroups = BitConverter.GetBytes(NumChannelGroups);
+            var bytesNumRecordsIds = BitConverter.GetBytes(NumRecordIds);
+            var bytesReserved = BitConverter.GetBytes(Reserved);
+
+            Array.Copy(bytesNumChannelGroups, 0, array, index + 20, bytesNumChannelGroups.Length);
+            Array.Copy(bytesNumRecordsIds, 0, array, index + 22, bytesNumRecordsIds.Length);
+            Array.Copy(bytesReserved, 0, array, index + 24, bytesReserved.Length);
+
+            index += GetSize();
+        }
+        internal void WriteNextBlockLink(byte[] array, int index, int baseIndex)
+        {
+            var bytesNextBlockLink = BitConverter.GetBytes(index);
+
+            Array.Copy(bytesNextBlockLink, 0, array, baseIndex + 4, bytesNextBlockLink.Length);
+        }
     }
 }

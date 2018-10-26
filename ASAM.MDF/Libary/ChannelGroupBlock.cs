@@ -60,7 +60,7 @@ namespace ASAM.MDF.Libary
             if (m_ptrTextBlock != 0)
             {
                 mdf.Data.Position = m_ptrTextBlock;
-                Comment = new TextBlock(mdf);
+                Comment = TextBlock.Read(mdf, mdf.Data);
             }
 
             if (m_ptrFirstChannelBlock != 0)

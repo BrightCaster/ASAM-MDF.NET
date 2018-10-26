@@ -5,82 +5,93 @@
 
     public class DataGroupCollection : IList<DataGroupBlock>
     {
-        public Mdf Mdf { get; private set; }
-        private DataGroupBlock first;
-        private List<DataGroupBlock> lDataGroupBlock;
+        private List<DataGroupBlock> items = new List<DataGroupBlock>();
 
-        public DataGroupCollection(Mdf mdf, DataGroupBlock dgBlock)
+        public DataGroupCollection(Mdf mdf)
         {
             if (mdf == null)
                 throw new ArgumentNullException("mdf");
 
-            if (dgBlock == null)
-                throw new ArgumentNullException("dgBlock");
             Mdf = mdf;
-
-            first = dgBlock;
-            lDataGroupBlock = Common.BuildBlockList(this.lDataGroupBlock, this.first);
         }
 
+        public Mdf Mdf { get; private set; }
+        
+        internal void Read(DataGroupBlock block)
+        {
+            items = Common.BuildBlockList(null, block);
+        }
+        internal void Write(byte[] array, ref int index)
+        {
+            DataGroupBlock prev = null;
+            int prevIndex = 0;
+            for (int i = 0; i < Count; i++)
+            {
+                var block = items[i];
+
+                if (prev != null)
+                    prev.WriteNextBlockLink(array, index, prevIndex);
+
+                prev = block;
+                prevIndex = index;
+
+                block.Write(array, ref index);
+            }
+        }
+
+        // IList.
         public int IndexOf(DataGroupBlock item)
         {
-            throw new NotImplementedException();
+            return items.IndexOf(item);
         }
         public void Insert(int index, DataGroupBlock item)
         {
-            throw new NotImplementedException();
+            items.Insert(index, item);
         }
         public void RemoveAt(int index)
         {
-            throw new NotImplementedException();
+            items.RemoveAt(index);
         }
         public DataGroupBlock this[int index]
         {
-            get
-            {
-                return this.lDataGroupBlock[index];
-            }
-            set
-            {
-                throw new NotImplementedException();
-            }
+            get { return items[index]; }
+            set { items[index] = value; }
         }
         public void Add(DataGroupBlock item)
         {
-            throw new NotImplementedException();
+            items.Add(item);
         }
         public void Clear()
         {
-            throw new NotImplementedException();
+            items.Clear();
         }
         public bool Contains(DataGroupBlock item)
         {
-            throw new NotImplementedException();
+            return items.Contains(item);
         }
         public void CopyTo(DataGroupBlock[] array, int arrayIndex)
         {
-            throw new NotImplementedException();
+            items.CopyTo(array, arrayIndex);
         }
         public int Count
         {
-            get { return this.lDataGroupBlock.Count; }
+            get { return items.Count; }
         }
         public bool IsReadOnly
         {
-            get { throw new NotImplementedException(); }
+            get { return false; }
         }
         public bool Remove(DataGroupBlock item)
         {
-            throw new NotImplementedException();
+            return items.Remove(item);
         }
         public IEnumerator<DataGroupBlock> GetEnumerator()
         {
-            return this.lDataGroupBlock.GetEnumerator();
+            return this.items.GetEnumerator();
         }
         System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
         {
             throw new NotImplementedException();
         }
-
     }
 }

@@ -1,6 +1,7 @@
 ﻿namespace ASAM.MDF.Libary
 {
     using System;
+    using System.IO;
     using System.Text;
 
     /// <summary>
@@ -14,10 +15,24 @@
                 throw new ArgumentNullException("mdf");
 
             Mdf = mdf;
-            BlockAddress = (uint)Mdf.Data.Position;
+        }
+
+        public Mdf Mdf { get; private set; }
+
+        public ushort Size { get; private set; }
+        public uint BlockAddress { get; private set; }
+        public string Identifier { get; protected set; }
+
+        internal virtual ushort GetSize()
+        {
+            return 0;
+        }
+        internal void Read(Stream stream)
+        {
+            BlockAddress = (uint)stream.Position;
 
             var data = new byte[4];
-            var read = Mdf.Data.Read(data, 0, data.Length);
+            var read = stream.Read(data, 0, data.Length);
 
             if (read != data.Length)
                 throw new FormatException();
@@ -28,13 +43,15 @@
             if (Size <= 4)
                 throw new FormatException();
         }
+        internal virtual void Write(byte[] array, ref int index)
+        {
+            var bytesIdentifier = Encoding.UTF8.GetBytes(Identifier);
+            var bytesSize = BitConverter.GetBytes(GetSize());
 
-        public Mdf Mdf { get; private set; }
+            Array.Copy(bytesIdentifier, 0, array, index, bytesIdentifier.Length);
+            Array.Copy(bytesSize, 0, array, index + 2, bytesSize.Length);
+        }
 
-        public ushort Size { get; private set; }
-        public uint BlockAddress { get; private set; }
-        public string Identifier { get; protected set; }
-  
         /// <summary>
         /// Sets the string value.
         /// </summary>

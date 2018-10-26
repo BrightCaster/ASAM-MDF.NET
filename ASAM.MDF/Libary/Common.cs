@@ -1,14 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-namespace ASAM.MDF.Libary
+﻿namespace ASAM.MDF.Libary
 {
+    using System.Collections.Generic;
+
     internal static class Common
     {
-        internal static List<T> BuildBlockList<T>(List<T> list, T first)
-            where T : INext<T>
+        internal static List<T> BuildBlockList<T>(List<T> list, T first) where T : INext<T>
         {
             if (list == null)
             {
@@ -22,6 +18,14 @@ namespace ASAM.MDF.Libary
             }
 
             return list;
+        }
+
+        internal static int GetSizeSafe(this Block block)
+        {
+            if (block == null)
+                return 0;
+
+            return block.GetSize();
         }
     }
 }
