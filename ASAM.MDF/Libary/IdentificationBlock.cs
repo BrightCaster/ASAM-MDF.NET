@@ -116,9 +116,6 @@
             get { return codePage; }
             set
             {
-                if (codePage == value)
-                    return;
-
                 codePage = value;
                 Encoding = value == 0 ? Encoding.ASCII : Encoding.GetEncoding(value);
             }

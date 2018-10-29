@@ -1,93 +1,97 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace ASAM.MDF.Libary
+﻿namespace ASAM.MDF.Libary
 {
+    using System;
+    using System.Collections.Generic;
+
     public class ChannelGroupCollection : IList<ChannelGroupBlock>
     {
+        private List<ChannelGroupBlock> items = new List<ChannelGroupBlock>();
+        
+        public ChannelGroupCollection(Mdf mdf, DataGroupBlock dataGroupBlock)
+        {
+            if (mdf == null)
+                throw new ArgumentNullException("mdf");
+
+            Mdf = mdf;
+            DataGroupBlock = dataGroupBlock;
+        }
+
+        public DataGroupBlock DataGroupBlock { get; internal set; }
         public Mdf Mdf { get; private set; }
-        private ChannelGroupBlock first;
-        private List<ChannelGroupBlock> lChannelGroupBlock;
-
-        public ChannelGroupCollection(Mdf mdf, ChannelGroupBlock cgBlock)
+        public int Count
         {
-          if (mdf == null)
-            throw new ArgumentNullException("mdf");
-
-          if (cgBlock == null)
-            throw new ArgumentNullException("cgBlock");
-          Mdf = mdf;
-
-		  first = cgBlock;
-		  lChannelGroupBlock = Common.BuildBlockList(this.lChannelGroupBlock, this.first);
+            get { return items.Count; }
         }
-
-        public int IndexOf(ChannelGroupBlock item)
+        public bool IsReadOnly
         {
-            throw new NotImplementedException();
-        }
-
-        public void Insert(int index, ChannelGroupBlock item)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void RemoveAt(int index)
-        {
-            throw new NotImplementedException();
+            get { return false; }
         }
 
         public ChannelGroupBlock this[int index]
         {
-            get
+            get { return this.items[index]; }
+            set { throw new NotImplementedException(); }
+        }
+
+        internal void Read(ChannelGroupBlock channelGroupBlock)
+        {
+            items = Common.BuildBlockList(null, channelGroupBlock);
+        }
+        internal void Write(byte[] array, ref int index)
+        {
+            ChannelGroupBlock prev = null;
+            int prevIndex = 0;
+            for (int i = 0; i < Count; i++)
             {
-                
-                return this.lChannelGroupBlock[index];
-            }
-            set
-            {
-                throw new NotImplementedException();
+                var block = items[i];
+
+                if (prev != null)
+                    prev.WriteNextChannelGroupBlockLink(array, index, prevIndex);
+
+                prev = block;
+                prevIndex = index;
+
+                block.Write(array, ref index);
+                block.WriteChannels(array, ref index);
             }
         }
 
+        public int IndexOf(ChannelGroupBlock item)
+        {
+            return items.IndexOf(item);
+        }
+        public void Insert(int index, ChannelGroupBlock item)
+        {
+            items.Insert(index, item);
+        }
+        public void RemoveAt(int index)
+        {
+            items.RemoveAt(index);
+        }
         public void Add(ChannelGroupBlock item)
         {
-            throw new NotImplementedException();
+            items.Add(item);
         }
-
         public void Clear()
         {
-            throw new NotImplementedException();
+            items.Clear();
         }
-
         public bool Contains(ChannelGroupBlock item)
         {
-            throw new NotImplementedException();
+            return items.Contains(item);
         }
-
         public void CopyTo(ChannelGroupBlock[] array, int arrayIndex)
         {
-            throw new NotImplementedException();
+            items.CopyTo(array, arrayIndex);
         }
-
-        public int Count
-        {
-            get { throw new NotImplementedException(); }
-        }
-
-        public bool IsReadOnly
-        {
-            get { throw new NotImplementedException(); }
-        }
-
         public bool Remove(ChannelGroupBlock item)
         {
-            throw new NotImplementedException();
+            return items.Remove(item);
         }
 
         public IEnumerator<ChannelGroupBlock> GetEnumerator()
         {
-			return this.lChannelGroupBlock.GetEnumerator();
+            return this.items.GetEnumerator();
         }
 
         System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()

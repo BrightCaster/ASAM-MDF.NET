@@ -16,7 +16,15 @@
         }
 
         public Mdf Mdf { get; private set; }
-        
+        public int Count
+        {
+            get { return items.Count; }
+        }
+        public bool IsReadOnly
+        {
+            get { return false; }
+        }
+
         internal void Read(DataGroupBlock block)
         {
             items = Common.BuildBlockList(null, block);
@@ -37,6 +45,11 @@
 
                 block.Write(array, ref index);
             }
+        }
+        internal void WriteChannelGroups(byte[] array, ref int index)
+        {
+            for (int i = 0; i < Count; i++)
+                items[i].WriteChannelGroups(array, ref index);
         }
 
         // IList.
@@ -72,14 +85,6 @@
         public void CopyTo(DataGroupBlock[] array, int arrayIndex)
         {
             items.CopyTo(array, arrayIndex);
-        }
-        public int Count
-        {
-            get { return items.Count; }
-        }
-        public bool IsReadOnly
-        {
-            get { return false; }
         }
         public bool Remove(DataGroupBlock item)
         {

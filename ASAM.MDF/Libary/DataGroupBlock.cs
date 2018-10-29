@@ -15,6 +15,7 @@
 
         private DataGroupBlock(Mdf mdf) : base(mdf)
         {
+            ChannelGroups = new ChannelGroupCollection(mdf, this);
         }
 
         public DataGroupBlock Next
@@ -67,10 +68,10 @@
 
         public static DataGroupBlock Create(Mdf mdf)
         {
-            var block = new DataGroupBlock(mdf);
-            block.Identifier = "DG";
-            
-            return block;
+            return new DataGroupBlock(mdf)
+            {
+                Identifier = "DG"
+            };
         }
         public static DataGroupBlock Read(Mdf mdf, Stream stream, uint position)
         {
@@ -87,7 +88,6 @@
                 throw new FormatException();
 
             block.nextBlock = null;
-            block.ChannelGroups = null;
             block.Trigger = null;
             block.Reserved = 0;
 
@@ -101,8 +101,8 @@
             if (data.Length >= 24)
                 block.Reserved = BitConverter.ToUInt32(data, 20);
 
-            //stream.Position = block.ptrFirstChannelGroupBlock;
-            //block.ChannelGroups = new ChannelGroupCollection(mdf, new ChannelGroupBlock(mdf));
+            if (block.ptrFirstChannelGroupBlock != 0)
+                block.ChannelGroups.Read(ChannelGroupBlock.Read(mdf, stream, block.ptrFirstChannelGroupBlock));
 
             /// TODO: Call Trigger Blocks
             //if (m_ptrTriggerBlock != 0)
@@ -125,6 +125,15 @@
         {
             return 28;
         }
+        internal override int GetSizeTotal()
+        {
+            var size = base.GetSizeTotal();
+
+            for (int i = 0; i < ChannelGroups.Count; i++)
+                size += ChannelGroups[i].GetSizeTotal();
+
+            return size;
+        }
         internal override void Write(byte[] array, ref int index)
         {
             base.Write(array, ref index);
@@ -138,6 +147,10 @@
             Array.Copy(bytesReserved, 0, array, index + 24, bytesReserved.Length);
 
             index += GetSize();
+        }
+        internal void WriteChannelGroups(byte[] array, ref int index)
+        {
+            ChannelGroups.Write(array, ref index);
         }
         internal void WriteNextBlockLink(byte[] array, int index, int baseIndex)
         {

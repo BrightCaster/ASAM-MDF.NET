@@ -47,6 +47,12 @@
             mdf.DataGroups[1].Reserved = 2;
             mdf.DataGroups[2].Reserved = 3;
 
+            mdf.DataGroups[0].ChannelGroups.Add(ChannelGroupBlock.Create(mdf));
+            mdf.DataGroups[0].ChannelGroups.Add(ChannelGroupBlock.Create(mdf));
+            mdf.DataGroups[0].ChannelGroups[0].Channels.Add(ChannelBlock.Create(mdf));
+            mdf.DataGroups[0].ChannelGroups[0].Channels.Add(ChannelBlock.Create(mdf));
+            mdf.DataGroups[0].ChannelGroups[0].Channels[0].SignalName = "time";
+
             var bytes = mdf.GetBytes();
 
             File.WriteAllBytes(filename4, bytes);
@@ -69,11 +75,10 @@
                         for (int j = 0; j < chGroup.NumChannels; j++)
                         {
                             var ch = chGroup.Channels[j];
-                            Console.WriteLine(
-                                "\t" + ch.SignalName + "(" + ch.BitOffset / 8 + " + " + ch.AdditionalByteOffset + ")" + "\t"
-                                + ch.SignalType);
 
+                            Console.WriteLine("\t" + ch.SignalName + "(" + ch.BitOffset / 8 + " + " + ch.AdditionalByteOffset + ")" + "\t" + ch.SignalType);
                             Console.Write("\tValues: ");
+
                             for (int r = 0; r < records.Length; r++)
                             {
                                 Console.Write(records[r].GetValue(ch) + "; ");

@@ -57,6 +57,7 @@
 
             // DGBLOCKs.
             DataGroups.Write(array, ref index);
+            DataGroups.WriteChannelGroups(array, ref index);
 
             return array;
         }
@@ -66,13 +67,11 @@
             var size = 0;
 
             size += IDBlock.GetSize();
-            size += HDBlock.GetSize();
-            size += HDBlock.FileComment.GetSizeSafe();
-            size += HDBlock.ProgramBlock.GetSizeSafe();
+            size += HDBlock.GetSizeTotal();
 
             for (int i = 0; i < DataGroups.Count; i++)
-                size += DataGroups[i].GetSizeSafe();
-            
+                size += DataGroups[i].GetSizeTotal();
+
             return size;
         }
     }

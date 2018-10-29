@@ -5,28 +5,19 @@
 
     public class ChannelCollection : IList<ChannelBlock>
     {
-        private ChannelBlock first;
-        private List<ChannelBlock> lChannelBlock;
+        private List<ChannelBlock> items = new List<ChannelBlock>();
 
-        public ChannelCollection(Mdf mdf, ChannelBlock cnBlock)
+        public ChannelCollection(Mdf mdf)
         {
             if (mdf == null)
                 throw new ArgumentNullException("mdf");
-
-            if (cnBlock == null)
-                throw new ArgumentNullException("cnBlock");
-            Mdf = mdf;
-
-            first = cnBlock;
-            lChannelBlock = Common.BuildBlockList(this.lChannelBlock, this.first);
         }
 
         public Mdf Mdf { get; private set; }
         public int Count
         {
-            get { throw new NotImplementedException(); }
+            get { return items.Count; }
         }
-
         public bool IsReadOnly
         {
             get { throw new NotImplementedException(); }
@@ -36,7 +27,7 @@
         {
             get
             {
-                return this.lChannelBlock[index];
+                return this.items[index];
             }
             set
             {
@@ -44,42 +35,52 @@
             }
         }
 
+        internal void Read(ChannelBlock cnBlock)
+        {
+            items = Common.BuildBlockList(null, cnBlock);
+        }
+        internal void Write(byte[] array, ref int index)
+        {
+            for (int i = 0; i < items.Count; i++)
+                items[i].Write(array, ref index);
+        }
+
         public int IndexOf(ChannelBlock item)
         {
-            throw new NotImplementedException();
+            return items.IndexOf(item);
         }
         public void Insert(int index, ChannelBlock item)
         {
-            throw new NotImplementedException();
+            items.Insert(index, item);
         }
         public void RemoveAt(int index)
         {
-            throw new NotImplementedException();
+            items.RemoveAt(index);
         }
         public void Add(ChannelBlock item)
         {
-            throw new NotImplementedException();
+            items.Add(item);
         }
         public void Clear()
         {
-            throw new NotImplementedException();
+            items.Clear();
         }
         public bool Contains(ChannelBlock item)
         {
-            return lChannelBlock.Contains(item);
+            return items.Contains(item);
         }
         public void CopyTo(ChannelBlock[] array, int arrayIndex)
         {
-            throw new NotImplementedException();
+            items.CopyTo(array, arrayIndex);
         }
         public bool Remove(ChannelBlock item)
         {
-            throw new NotImplementedException();
+            return items.Remove(item);
         }
 
         public IEnumerator<ChannelBlock> GetEnumerator()
         {
-            return this.lChannelBlock.GetEnumerator();
+            return this.items.GetEnumerator();
         }
 
         System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()

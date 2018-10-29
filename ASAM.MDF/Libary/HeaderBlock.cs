@@ -262,6 +262,10 @@
 
             return 164;
         }
+        internal override int GetSizeTotal()
+        {
+            return GetSize() + FileComment.GetSizeSafe() + ProgramBlock.GetSizeSafe();
+        }
         internal override void Write(byte[] array, ref int index)
         {
             base.Write(array, ref index);

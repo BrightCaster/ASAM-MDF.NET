@@ -27,6 +27,10 @@
         {
             return 0;
         }
+        internal virtual int GetSizeTotal()
+        {
+            return GetSize();
+        }
         internal void Read(Stream stream)
         {
             BlockAddress = (uint)stream.Position;

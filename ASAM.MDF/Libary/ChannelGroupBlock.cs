@@ -1,72 +1,89 @@
-﻿using System;
-
-namespace ASAM.MDF.Libary
+﻿namespace ASAM.MDF.Libary
 {
+    using System;
+    using System.IO;
+
     public class ChannelGroupBlock : Block, INext<ChannelGroupBlock>
     {
-        private ChannelGroupBlock m_Next;
+        private uint ptrNextChannelGroup;
+        private uint ptrFirstChannelBlock;
+        private uint ptrTextBlock;
+        private uint ptrFirstSampleReductionBlock;
+        private ChannelGroupBlock next;
+        private Stream stream;
+
+        private ChannelGroupBlock(Mdf mdf) : base(mdf)
+        {
+        }
+
         public ChannelGroupBlock Next
         {
-          get
-          {
-            if (m_Next == null && m_ptrNextChannelGroup != 0)
+            get
             {
-              Mdf.Data.Position = m_ptrNextChannelGroup;
-              m_Next = new ChannelGroupBlock(Mdf);
-            }
+                if (next == null && ptrNextChannelGroup != 0)
+                    next = Read(Mdf, stream, ptrNextChannelGroup);
 
-            return m_Next;
-          }
+                return next;
+            }
         }
 
         public ChannelCollection Channels { get; private set; }
         public TextBlock Comment { get; private set; }
-        public UInt16 RecordID { get; private set; }
-        public UInt16 NumChannels { get; private set; }
-        public UInt16 RecordSize { get; private set; }
-        public UInt32 NumRecords { get; private set; }
+        public ushort RecordID { get; private set; }
+        public ushort NumChannels { get; private set; }
+        public ushort RecordSize { get; private set; }
+        public uint NumRecords { get; private set; }
         public SampleReductionCollection SampleReductions { get; private set; }
 
-        private uint m_ptrNextChannelGroup;
-        private uint m_ptrFirstChannelBlock;
-        private uint m_ptrTextBlock;
-        private uint m_ptrFirstSampleReductionBlock;
-
-        public ChannelGroupBlock(Mdf mdf)
-          : base(mdf)
+        public static ChannelGroupBlock Create(Mdf mdf)
         {
-            byte[] data = new byte[Size - 4];
-            int read = Mdf.Data.Read(data, 0, data.Length);
+            return new ChannelGroupBlock(mdf)
+            {
+                Channels = new ChannelCollection(mdf),
+                Identifier = "CG",
+            };
+        }
+
+        internal static ChannelGroupBlock Read(Mdf mdf, Stream stream, uint position)
+        {
+            stream.Position = position;
+
+            var block = new ChannelGroupBlock(mdf);
+            block.Read(stream);
+            block.stream = stream;
+
+            var data = new byte[block.Size - 4];
+            var read = stream.Read(data, 0, data.Length);
 
             if (read != data.Length)
-              throw new FormatException();
+                throw new FormatException();
 
-            m_Next = null;
-            Channels = null;
-            Comment = null;
-            SampleReductions = null;
+            block.next = null;
+            block.Channels = null;
+            block.Comment = null;
+            block.SampleReductions = null;
 
-            m_ptrNextChannelGroup = BitConverter.ToUInt32(data, 0);
-            m_ptrFirstChannelBlock = BitConverter.ToUInt32(data, 4);
-            m_ptrTextBlock = BitConverter.ToUInt32(data, 8);
-            RecordID = BitConverter.ToUInt16(data, 12);
-            NumChannels = BitConverter.ToUInt16(data, 14);
-            RecordSize = BitConverter.ToUInt16(data, 16);
-            NumRecords = BitConverter.ToUInt32(data, 18);
-            
-            if(data.Length >= 26)
-                m_ptrFirstSampleReductionBlock = BitConverter.ToUInt32(data, 22);
+            block.ptrNextChannelGroup = BitConverter.ToUInt32(data, 0);
+            block.ptrFirstChannelBlock = BitConverter.ToUInt32(data, 4);
+            block.ptrTextBlock = BitConverter.ToUInt32(data, 8);
+            block.RecordID = BitConverter.ToUInt16(data, 12);
+            block.NumChannels = BitConverter.ToUInt16(data, 14);
+            block.RecordSize = BitConverter.ToUInt16(data, 16);
+            block.NumRecords = BitConverter.ToUInt32(data, 18);
 
-            if (m_ptrTextBlock != 0)
+            if (data.Length >= 26)
+                block.ptrFirstSampleReductionBlock = BitConverter.ToUInt32(data, 22);
+
+            if (block.ptrTextBlock != 0)
             {
-                mdf.Data.Position = m_ptrTextBlock;
-                Comment = TextBlock.Read(mdf, mdf.Data);
+                stream.Position = block.ptrTextBlock;
+                block.Comment = TextBlock.Read(mdf, stream);
             }
 
-            if (m_ptrFirstChannelBlock != 0)
+            if (block.ptrFirstChannelBlock != 0)
             {
-                mdf.Data.Position = m_ptrFirstChannelBlock;
-                Channels = new ChannelCollection(mdf, new ChannelBlock(mdf));
+                block.Channels = new ChannelCollection(mdf);
+                block.Channels.Read(ChannelBlock.Read(mdf, stream, block.ptrFirstChannelBlock));
             }
 
             //if (m_ptrFirstSampleReductionBlock != 0)
@@ -74,6 +91,48 @@ namespace ASAM.MDF.Libary
             //    mdf.Data.Position = m_ptrFirstSampleReductionBlock;
             //    SampleReductions = new SampleReductionCollection(mdf, new SampleReductionBlock(mdf));
             //}
+
+            return block;
+        }
+
+        internal override ushort GetSize()
+        {
+            return 30;
+        }
+        internal override int GetSizeTotal()
+        {
+            var size = base.GetSizeTotal();
+
+            for (int i = 0; i < Channels.Count; i++)
+                size += Channels[i].GetSizeTotal();
+
+            return size;
+        }
+        internal override void Write(byte[] array, ref int index)
+        {
+            base.Write(array, ref index);
+
+            var bytesRecordId = BitConverter.GetBytes(RecordID);
+            var bytesNumChannels = BitConverter.GetBytes(Channels.Count);
+            var bytesRecordSize = BitConverter.GetBytes(RecordSize);
+            var bytesNumRecords = BitConverter.GetBytes(NumRecords);
+
+            Array.Copy(bytesRecordId, 0, array, index + 16, bytesRecordId.Length);
+            Array.Copy(bytesNumChannels, 0, array, index + 18, bytesNumChannels.Length);
+            Array.Copy(bytesRecordSize, 0, array, index + 20, bytesRecordSize.Length);
+            Array.Copy(bytesNumRecords, 0, array, index + 24, bytesNumRecords.Length);
+
+            index += GetSize();
+        }
+        internal void WriteChannels(byte[] array, ref int index)
+        {
+            Channels.Write(array, ref index);
+        }
+        internal void WriteNextChannelGroupBlockLink(byte[] array, int index, int baseIndex)
+        {
+            var bytesNextChannelGroupBlockLink = BitConverter.GetBytes(index);
+
+            Array.Copy(bytesNextChannelGroupBlockLink, 0, array, baseIndex + 4, bytesNextChannelGroupBlockLink.Length);
         }
     }
 }
