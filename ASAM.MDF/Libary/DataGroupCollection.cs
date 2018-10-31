@@ -31,25 +31,35 @@
         }
         internal void Write(byte[] array, ref int index)
         {
+            var blockIndexes = new int[Count];
+
             DataGroupBlock prev = null;
             int prevIndex = 0;
+
+            // Write block info.
             for (int i = 0; i < Count; i++)
             {
                 var block = items[i];
+                blockIndexes[i] = index;
 
                 if (prev != null)
                     prev.WriteNextBlockLink(array, index, prevIndex);
-
+                
                 prev = block;
                 prevIndex = index;
 
                 block.Write(array, ref index);
             }
-        }
-        internal void WriteChannelGroups(byte[] array, ref int index)
-        {
+
+            // Write channel groups.
+            var firstChannelGroupIndex = index;
             for (int i = 0; i < Count; i++)
-                items[i].WriteChannelGroups(array, ref index);
+            {
+                var block = items[i];
+
+                block.WriteChannelGroups(array, ref index);
+                block.WriteFirstChannelGroupBlockLink(array, firstChannelGroupIndex, blockIndexes[i]);
+            }
         }
 
         // IList.

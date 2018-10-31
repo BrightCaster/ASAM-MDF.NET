@@ -138,7 +138,7 @@
         {
             base.Write(array, ref index);
 
-            var bytesNumChannelGroups = BitConverter.GetBytes(NumChannelGroups);
+            var bytesNumChannelGroups = BitConverter.GetBytes(ChannelGroups.Count);
             var bytesNumRecordsIds = BitConverter.GetBytes(NumRecordIds);
             var bytesReserved = BitConverter.GetBytes(Reserved);
 
@@ -152,11 +152,17 @@
         {
             ChannelGroups.Write(array, ref index);
         }
-        internal void WriteNextBlockLink(byte[] array, int index, int baseIndex)
+        internal void WriteFirstChannelGroupBlockLink(byte[] array, int index, int blockIndex)
+        {
+            var bytesFirst = BitConverter.GetBytes(index);
+
+            Array.Copy(bytesFirst, 0, array, blockIndex + 8, bytesFirst.Length);
+        }
+        internal void WriteNextBlockLink(byte[] array, int index, int blockIndex)
         {
             var bytesNextBlockLink = BitConverter.GetBytes(index);
 
-            Array.Copy(bytesNextBlockLink, 0, array, baseIndex + 4, bytesNextBlockLink.Length);
+            Array.Copy(bytesNextBlockLink, 0, array, blockIndex + 4, bytesNextBlockLink.Length);
         }
     }
 }

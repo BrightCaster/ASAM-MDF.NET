@@ -41,8 +41,22 @@
         }
         internal void Write(byte[] array, ref int index)
         {
+            ChannelBlock prev = null;
+            int prevIndex = 0;
+
             for (int i = 0; i < items.Count; i++)
-                items[i].Write(array, ref index);
+            {
+                var block = items[i];
+                
+                if (prev != null)
+                    prev.WriteNextChannelLink(array, index, prevIndex);
+
+                prev = block;
+                prevIndex = index;
+
+                block.Write(array, ref index);
+                block.WriteChannelConversion(array, ref index, prevIndex);
+            }
         }
 
         public int IndexOf(ChannelBlock item)

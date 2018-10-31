@@ -20,6 +20,7 @@
         private uint ptrLongSignalName;
         private uint ptrDisplayName;
         private string signalName;
+        private string signalDescription;
 
         private ChannelConversionBlock channelConversion;
         private ChannelBlock next;
@@ -44,34 +45,36 @@
             get
             {
                 if (channelConversion == null && ptrChannelConversionBlock != 0)
-                {
-                    Mdf.Data.Position = ptrChannelConversionBlock;
-                    channelConversion = new ChannelConversionBlock(Mdf);
-                }
+                    channelConversion = ChannelConversionBlock.Read(Mdf, stream, ptrChannelConversionBlock);
 
                 return channelConversion;
             }
+            set { channelConversion = value; }
         }
         public ChannelExtensionBlock SourceDepending { get; private set; }
         public ChannelDependencyBlock Dependency { get; private set; }
         public TextBlock Comment { get; private set; }
-        public ChannelType Type { get; private set; }
+        public ChannelType Type { get; set; }
         public string SignalName
         {
             get { return signalName; }
             set { SetStringValue(ref signalName, value, 32); }
         }
-        public string SignalDescription { get; private set; }
-        public ushort BitOffset { get; private set; }
-        public ushort NumberOfBits { get; private set; }
-        public SignalType SignalType { get; private set; }
-        public bool ValueRange { get; private set; }
-        public double MinValue { get; private set; }
-        public double MaxValue { get; private set; }
-        public double SampleRate { get; private set; }
+        public string SignalDescription
+        {
+            get { return signalDescription; }
+            set { SetStringValue(ref signalDescription, value, 128); }
+        }
+        public ushort BitOffset { get; set; }
+        public ushort NumberOfBits { get; set; }
+        public SignalType SignalType { get; set; }
+        public bool ValueRange { get; set; }
+        public double MinValue { get; set; }
+        public double MaxValue { get; set; }
+        public double SampleRate { get; set; }
         public TextBlock LongSignalName { get; private set; }
         public TextBlock DisplayName { get; private set; }
-        public ushort AdditionalByteOffset { get; private set; }
+        public ushort AdditionalByteOffset { get; set; }
 
         public static ChannelBlock Create(Mdf mdf)
         {
@@ -79,6 +82,7 @@
             {
                 Identifier = "CN",
                 SignalName = "",
+                SignalDescription = "",
             };
         }
         public static ChannelBlock Read(Mdf mdf, Stream stream, uint position)
@@ -106,8 +110,8 @@
             block.ptrChannelDependencyBlock = BitConverter.ToUInt32(data, 12);
             block.ptrChannelComment = BitConverter.ToUInt32(data, 16);
             block.Type = (ChannelType)BitConverter.ToUInt16(data, 20);
-            block.SignalName = mdf.IDBlock.Encoding.GetString(data, 22, 32);
-            block.SignalDescription = mdf.IDBlock.Encoding.GetString(data, 54, 128);
+            block.SignalName = mdf.IDBlock.Encoding.GetString(data, 22, 32).Humanize();
+            block.SignalDescription = mdf.IDBlock.Encoding.GetString(data, 54, 128).Humanize();
             block.BitOffset = BitConverter.ToUInt16(data, 182);
             block.NumberOfBits = BitConverter.ToUInt16(data, 184);
             block.SignalType = (SignalType)BitConverter.ToUInt16(data, 186);
@@ -157,15 +161,72 @@
             // 3.00
             return 228;
         }
+        internal override int GetSizeTotal()
+        {
+            var size = base.GetSizeTotal();
+
+            if (channelConversion != null)
+                size += channelConversion.GetSizeTotal();
+
+            return size;
+        }
         internal override void Write(byte[] array, ref int index)
         {
             base.Write(array, ref index);
 
+            var bytesChannelType = BitConverter.GetBytes((ushort)Type);
             var bytesSignalName = Mdf.IDBlock.Encoding.GetBytes(SignalName);
+            var bytesSignalDesc = Mdf.IDBlock.Encoding.GetBytes(SignalDescription);
+            var bytesBitOffset = BitConverter.GetBytes(BitOffset);
+            var bytesNumOfBits = BitConverter.GetBytes(NumberOfBits);
+            var bytesSignalDataType = BitConverter.GetBytes((ushort)SignalType);
+            var bytesValueRangeValid = BitConverter.GetBytes(ValueRange);
+            var bytesMinValue = BitConverter.GetBytes(MinValue);
+            var bytesMaxValue = BitConverter.GetBytes(MaxValue);
+            var bytesSampleRate = BitConverter.GetBytes(SampleRate);
 
+            Array.Copy(bytesChannelType, 0, array, index + 24, bytesChannelType.Length);
             Array.Copy(bytesSignalName, 0, array, index + 26, bytesSignalName.Length);
+            Array.Copy(bytesSignalDesc, 0, array, index + 58, bytesSignalDesc.Length);
+            Array.Copy(bytesBitOffset, 0, array, index + 186, bytesBitOffset.Length);
+            Array.Copy(bytesNumOfBits, 0, array, index + 188, bytesNumOfBits.Length);
+            Array.Copy(bytesSignalDataType, 0, array, index + 190, bytesSignalDataType.Length);
+            Array.Copy(bytesValueRangeValid, 0, array, index + 192, bytesValueRangeValid.Length);
+            Array.Copy(bytesMinValue, 0, array, index + 194, bytesMinValue.Length);
+            Array.Copy(bytesMaxValue, 0, array, index + 202, bytesMaxValue.Length);
+            Array.Copy(bytesSampleRate, 0, array, index + 210, bytesSampleRate.Length);
+
+            if (Mdf.IDBlock.Version >= 212)
+            {
+                // TODO: LongSignalName.
+            }
+
+            if (Mdf.IDBlock.Version >= 300)
+            {
+                // TODO: DisplayName.
+                var bytesAdditionalOffset = BitConverter.GetBytes(AdditionalByteOffset);
+
+                Array.Copy(bytesAdditionalOffset, 0, array, index + 226, bytesAdditionalOffset.Length);
+            }
 
             index += GetSize();
+        }
+        internal void WriteChannelConversion(byte[] array, ref int index, int blockIndex)
+        {
+            if (channelConversion == null)
+                return;
+
+            var bytesConversionIndex = BitConverter.GetBytes(index);
+
+            Array.Copy(bytesConversionIndex, 0, array, blockIndex + 8, bytesConversionIndex.Length);
+
+            ChannelConversion.Write(array, ref index);
+        }
+        internal void WriteNextChannelLink(byte[] array, int index, int blockIndex)
+        {
+            var bytesNextChannelLink = BitConverter.GetBytes(index);
+
+            Array.Copy(bytesNextChannelLink, 0, array, blockIndex + 4, bytesNextChannelLink.Length);
         }
     }
 }

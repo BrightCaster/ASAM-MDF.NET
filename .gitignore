@@ -303,3 +303,6 @@ __pycache__/
 
 # OpenCover UI analysis results
 OpenCover/
+/ASAM.MDF.Tests/*.mf4
+/ASAM.MDF.Tests/*.dat
+/ASAM.MDF.Tests/*.tags

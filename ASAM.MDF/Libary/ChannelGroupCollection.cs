@@ -47,12 +47,12 @@
 
                 if (prev != null)
                     prev.WriteNextChannelGroupBlockLink(array, index, prevIndex);
-
+                
                 prev = block;
                 prevIndex = index;
 
                 block.Write(array, ref index);
-                block.WriteChannels(array, ref index);
+                block.WriteChannels(array, ref index, prevIndex);
             }
         }
 

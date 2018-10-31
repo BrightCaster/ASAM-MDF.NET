@@ -178,7 +178,7 @@
             get { return timerIdentification; }
             set { SetStringValue(ref timerIdentification, value, 32); }
         }
-
+        
         internal static HeaderBlock Create(Mdf mdf)
         {
             var block = new HeaderBlock(mdf);
@@ -206,19 +206,19 @@
                 throw new FormatException();
 
             block.DataGroupsCount = BitConverter.ToUInt16(data, 12);
-            block.Date = mdf.IDBlock.Encoding.GetString(data, 14, 10);
-            block.Time = mdf.IDBlock.Encoding.GetString(data, 24, 8);
-            block.Author = mdf.IDBlock.Encoding.GetString(data, 32, 32);
-            block.Organization = mdf.IDBlock.Encoding.GetString(data, 64, 32);
-            block.Project = mdf.IDBlock.Encoding.GetString(data, 96, 32);
-            block.Subject = mdf.IDBlock.Encoding.GetString(data, 128, 32);
+            block.Date = mdf.IDBlock.Encoding.GetString(data, 14, 10).Humanize();
+            block.Time = mdf.IDBlock.Encoding.GetString(data, 24, 8).Humanize();
+            block.Author = mdf.IDBlock.Encoding.GetString(data, 32, 32).Humanize();
+            block.Organization = mdf.IDBlock.Encoding.GetString(data, 64, 32).Humanize();
+            block.Project = mdf.IDBlock.Encoding.GetString(data, 96, 32).Humanize();
+            block.Subject = mdf.IDBlock.Encoding.GetString(data, 128, 32).Humanize();
 
             if (mdf.IDBlock.Version >= 320)
             {
                 block.TimeStamp = BitConverter.ToUInt64(data, 160);
                 block.UTCTimeOffset = BitConverter.ToInt16(data, 168);
                 block.TimeQuality = (TimeQuality)BitConverter.ToUInt16(data, 170);
-                block.TimerIdentification = mdf.IDBlock.Encoding.GetString(data, 172, 32);
+                block.TimerIdentification = mdf.IDBlock.Encoding.GetString(data, 172, 32).Humanize();
             }
             else
             {

@@ -27,5 +27,13 @@
 
             return block.GetSize();
         }
+
+        internal static string Humanize(this string str)
+        {
+            if (string.IsNullOrEmpty(str))
+                return str;
+
+            return str.Replace("\0", "");
+        }
     }
 }

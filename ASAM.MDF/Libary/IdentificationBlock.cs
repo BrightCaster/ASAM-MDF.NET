@@ -173,15 +173,15 @@
             var block = new IdentificationBlock();
 
             block.Mdf = mdf;
-            block.fileIdentifier = Encoding.UTF8.GetString(data, 0, 8);
-            block.formatIdentifier = Encoding.UTF8.GetString(data, 8, 8);
-            block.programIdentifier = Encoding.UTF8.GetString(data, 16, 8);
+            block.fileIdentifier = Encoding.UTF8.GetString(data, 0, 8).Humanize();
+            block.formatIdentifier = Encoding.UTF8.GetString(data, 8, 8).Humanize();
+            block.programIdentifier = Encoding.UTF8.GetString(data, 16, 8).Humanize();
             block.ByteOrder = (ByteOrder)BitConverter.ToUInt16(data, 24);
             block.FloatingPointFormat = (FloatingPointFormat)BitConverter.ToUInt16(data, 26);
             block.Version = BitConverter.ToUInt16(data, 28);
             block.CodePage = BitConverter.ToUInt16(data, 30);
-            block.reserved1 = Encoding.UTF8.GetString(data, 32, 2);
-            block.reserved2 = Encoding.UTF8.GetString(data, 34, 30);
+            block.reserved1 = Encoding.UTF8.GetString(data, 32, 2).Humanize();
+            block.reserved2 = Encoding.UTF8.GetString(data, 34, 30).Humanize();
 
             return block;
         }

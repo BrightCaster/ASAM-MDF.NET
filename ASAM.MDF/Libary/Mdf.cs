@@ -57,8 +57,7 @@
 
             // DGBLOCKs.
             DataGroups.Write(array, ref index);
-            DataGroups.WriteChannelGroups(array, ref index);
-
+            
             return array;
         }
 

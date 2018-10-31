@@ -59,7 +59,7 @@
                 throw new FormatException();
 
             block.next = null;
-            block.Channels = null;
+            block.Channels = new ChannelCollection(mdf);
             block.Comment = null;
             block.SampleReductions = null;
 
@@ -81,10 +81,7 @@
             }
 
             if (block.ptrFirstChannelBlock != 0)
-            {
-                block.Channels = new ChannelCollection(mdf);
                 block.Channels.Read(ChannelBlock.Read(mdf, stream, block.ptrFirstChannelBlock));
-            }
 
             //if (m_ptrFirstSampleReductionBlock != 0)
             //{
@@ -124,15 +121,22 @@
 
             index += GetSize();
         }
-        internal void WriteChannels(byte[] array, ref int index)
+        internal void WriteChannels(byte[] array, ref int index, int blockIndex)
         {
+            if (Channels.Count == 0)
+                return;
+
+            var bytesFirstChannelLink = BitConverter.GetBytes(index);
+
+            Array.Copy(bytesFirstChannelLink, 0, array, blockIndex + 8, bytesFirstChannelLink.Length);
+
             Channels.Write(array, ref index);
         }
-        internal void WriteNextChannelGroupBlockLink(byte[] array, int index, int baseIndex)
+        internal void WriteNextChannelGroupBlockLink(byte[] array, int index, int blockIndex)
         {
             var bytesNextChannelGroupBlockLink = BitConverter.GetBytes(index);
 
-            Array.Copy(bytesNextChannelGroupBlockLink, 0, array, baseIndex + 4, bytesNextChannelGroupBlockLink.Length);
+            Array.Copy(bytesNextChannelGroupBlockLink, 0, array, blockIndex + 4, bytesNextChannelGroupBlockLink.Length);
         }
     }
 }
