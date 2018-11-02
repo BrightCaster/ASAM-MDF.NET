@@ -50,6 +50,7 @@
     <Compile Include="Libary\ChannelGroupBlock.cs" />
     <Compile Include="Libary\ChannelGroupCollection.cs" />
     <Compile Include="Libary\Common.cs" />
+    <Compile Include="Libary\ConversionData.cs" />
     <Compile Include="Libary\DataGroupBlock.cs" />
     <Compile Include="Libary\DataGroupCollection.cs" />
     <Compile Include="Libary\DataRecord.cs" />

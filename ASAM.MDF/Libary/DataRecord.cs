@@ -15,7 +15,7 @@
         }
 
         public ChannelGroupBlock ChannelGroup { get; private set; }
-        public byte[] Data { get; private set; }
+        public byte[] Data { get; set; }
 
         public object GetValue(ChannelBlock channel)
         {
@@ -23,6 +23,7 @@
                 throw new ArgumentException("channel");
 
             var byteOffset = channel.BitOffset / 8;
+            var value = (object)null;
 
             // TODO: BigEndian byte order not supported yet.
             switch (channel.SignalType)
@@ -33,7 +34,8 @@
                         for (int i = 0; i < channel.NumberOfBits; i++)
                             result |= (uint)((GetBit(Data, channel.BitOffset + i) ? 1 : 0) << i);
 
-                        return result;
+                        value = result;
+                        break;
                     }
 
                 case SignalType.Int:
@@ -42,30 +44,36 @@
                         for (int i = 0; i < channel.NumberOfBits; i++)
                             result |= (GetBit(Data, channel.BitOffset + i) ? 1 : 0) << i;
 
-                        return result;
+                        value = result;
+                        break;
                     }
 
                 case SignalType.IEEE754Float:
                     if (channel.NumberOfBits == 32)
-                        return BitConverter.ToSingle(Data, byteOffset);
+                        value = BitConverter.ToSingle(Data, byteOffset);
                     if (channel.NumberOfBits == 64)
-                        return (float)BitConverter.ToDouble(Data, byteOffset);
+                        value = (float)BitConverter.ToDouble(Data, byteOffset);
 
                     break;
 
                 case SignalType.IEEE754Double:
                     if (channel.NumberOfBits == 32)
-                        return (double)BitConverter.ToSingle(Data, byteOffset);
+                        value = (double)BitConverter.ToSingle(Data, byteOffset);
                     if (channel.NumberOfBits == 64)
-                        return BitConverter.ToDouble(Data, byteOffset);
+                        value = BitConverter.ToDouble(Data, byteOffset);
 
                     break;
 
                 case SignalType.String:
-                    return ChannelGroup.Mdf.IDBlock.Encoding.GetString(Data, byteOffset, channel.NumberOfBits / 8);
+                    value = ChannelGroup.Mdf.IDBlock.Encoding.GetString(Data, byteOffset, channel.NumberOfBits / 8);
+                    break;
+                
             }
 
-            return null;
+            if (channel.ChannelConversion != null && value != null)
+                return channel.ChannelConversion.AdditionalConversionData.GetPhyValue(Convert.ToDouble(value));
+
+            return value;
         }
 
         private static bool GetBit(byte[] array, int bit)

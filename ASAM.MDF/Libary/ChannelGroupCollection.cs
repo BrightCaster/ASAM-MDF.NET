@@ -52,6 +52,7 @@
                 prevIndex = index;
 
                 block.Write(array, ref index);
+                block.WriteComment(array, ref index, prevIndex);
                 block.WriteChannels(array, ref index, prevIndex);
             }
         }

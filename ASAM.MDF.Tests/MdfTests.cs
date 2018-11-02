@@ -43,6 +43,7 @@
 
             var channelGroupsCount = 4;
             var channelGroupIndex = 1;
+            var channelGroupText = "TestChannelGroup";
 
             var channelsCount = 2;
             var channel1ChannelType = ChannelType.Time;
@@ -75,8 +76,12 @@
             var conversionPhyUnit = "unit";
             var conversionType = ConversionType.Linear;
             var conversionSize = (ushort)16;
-            var conversionData = new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
-            
+            var conversionData = new double[] { 1, 2 };
+
+            var recordsCount = (uint)2;
+            var record1 = new byte[] { /*time|double*/ 1, 1, 1, 1, 1, 1, 1, 1, /*data|short*/ 2, 2 };
+            var record2 = new byte[] { /*time|double*/ 3, 3, 3, 3, 3, 3, 3, 3, /*data|short*/ 4, 4 };
+
             // Write.
             var mdf = new Mdf();
 
@@ -112,6 +117,7 @@
                 dataGroup.ChannelGroups.Add(ChannelGroupBlock.Create(mdf));
 
             var channelGroup = dataGroup.ChannelGroups[channelGroupIndex];
+            channelGroup.Comment = TextBlock.Create(mdf, channelGroupText);
             
             for (int i = 0; i < channelsCount; i++)
                 channelGroup.Channels.Add(ChannelBlock.Create(mdf));
@@ -148,8 +154,15 @@
             channel1.ChannelConversion.MaxPhysicalValue = conversionMaxValue;
             channel1.ChannelConversion.PhysicalUnit = "unit";
             channel1.ChannelConversion.ConversionType = conversionType;
-            channel1.ChannelConversion.AdditionalConversionData = conversionData;
+            channel1.ChannelConversion.AdditionalConversionData.SetParameters(conversionData);
 
+            dataGroup.Records = new DataRecord[recordsCount];
+            dataGroup.Records[0].Data = record1;
+            dataGroup.Records[1].Data = record2;
+
+            channelGroup.RecordSize = 10;
+            channelGroup.NumRecords = recordsCount;
+            
             var bytes = mdf.GetBytes();
 
             File.WriteAllBytes("C:\\we\\test.dat", bytes);
@@ -210,6 +223,8 @@
 
                 // CNBLOCK.
                 Assert.NotNull(channelGroup);
+                Assert.NotNull(channelGroup.Comment);
+                Assert.AreEqual(channelGroupText, channelGroup.Comment.Text);
                 Assert.AreEqual(channelsCount, channelGroup.NumChannels);
                 Assert.AreEqual(channelsCount, channelGroup.Channels.Count);
 
@@ -249,7 +264,15 @@
                 Assert.AreEqual(conversionMaxValue, conversion.MaxPhysicalValue);
                 Assert.AreEqual(conversionPhyUnit, conversion.PhysicalUnit);
                 Assert.AreEqual(conversionType, conversion.ConversionType);
-                Assert.That(conversionData, Is.EquivalentTo(conversion.AdditionalConversionData));
+                Assert.That(conversionData, Is.EquivalentTo(conversion.AdditionalConversionData.GetParameters()));
+
+                // Records.
+                Assert.AreEqual(recordsCount, channelGroup.NumRecords);
+                Assert.AreEqual((ushort)10, channelGroup.RecordSize);
+                Assert.NotNull(dataGroup.Records);
+                Assert.AreEqual(recordsCount, dataGroup.Records.Length);
+                Assert.That(record1, Is.EquivalentTo(dataGroup.Records[0].Data));
+                Assert.That(record2, Is.EquivalentTo(dataGroup.Records[1].Data));
             }
         }
     }

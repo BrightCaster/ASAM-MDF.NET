@@ -60,6 +60,14 @@
                 block.WriteChannelGroups(array, ref index);
                 block.WriteFirstChannelGroupBlockLink(array, firstChannelGroupIndex, blockIndexes[i]);
             }
+
+            // Write records.
+            for (int i = 0; i < Count; i++)
+            {
+                var block = items[i];
+
+                block.WriteRecords(array, ref index, blockIndexes[i]);
+            }
         }
 
         // IList.

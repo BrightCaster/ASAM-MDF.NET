@@ -28,11 +28,11 @@
         }
 
         public ChannelCollection Channels { get; private set; }
-        public TextBlock Comment { get; private set; }
+        public TextBlock Comment { get; set; }
         public ushort RecordID { get; private set; }
         public ushort NumChannels { get; private set; }
-        public ushort RecordSize { get; private set; }
-        public uint NumRecords { get; private set; }
+        public ushort RecordSize { get; set; }
+        public uint NumRecords { get; set; }
         public SampleReductionCollection SampleReductions { get; private set; }
 
         public static ChannelGroupBlock Create(Mdf mdf)
@@ -103,6 +103,8 @@
             for (int i = 0; i < Channels.Count; i++)
                 size += Channels[i].GetSizeTotal();
 
+            size += Comment.GetSizeSafe();
+
             return size;
         }
         internal override void Write(byte[] array, ref int index)
@@ -117,7 +119,7 @@
             Array.Copy(bytesRecordId, 0, array, index + 16, bytesRecordId.Length);
             Array.Copy(bytesNumChannels, 0, array, index + 18, bytesNumChannels.Length);
             Array.Copy(bytesRecordSize, 0, array, index + 20, bytesRecordSize.Length);
-            Array.Copy(bytesNumRecords, 0, array, index + 24, bytesNumRecords.Length);
+            Array.Copy(bytesNumRecords, 0, array, index + 22, bytesNumRecords.Length);
 
             index += GetSize();
         }
@@ -131,6 +133,17 @@
             Array.Copy(bytesFirstChannelLink, 0, array, blockIndex + 8, bytesFirstChannelLink.Length);
 
             Channels.Write(array, ref index);
+        }
+        internal void WriteComment(byte[] array, ref int index, int blockIndex)
+        {
+            if (Comment == null)
+                return;
+
+            var bytesCommentLink = BitConverter.GetBytes(index);
+
+            Array.Copy(bytesCommentLink, 0, array, blockIndex + 12, bytesCommentLink.Length);
+
+            Comment.Write(array, ref index);
         }
         internal void WriteNextChannelGroupBlockLink(byte[] array, int index, int blockIndex)
         {

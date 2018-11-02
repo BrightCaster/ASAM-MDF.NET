@@ -12,6 +12,7 @@
         private uint ptrFirstChannelGroupBlock;
         private uint ptrTriggerBlock;
         private uint ptrDataBlock;
+        private DataRecord[] records;
 
         private DataGroupBlock(Mdf mdf) : base(mdf)
         {
@@ -29,33 +30,8 @@
             }
         }
         public ChannelGroupCollection ChannelGroups { get; private set; }
-        public DataRecord[] Records
-        {
-            get
-            {
-                Mdf.Data.Position = ptrDataBlock;
-
-                var records = new List<DataRecord>();
-
-                for (int i = 0; i < NumChannelGroups; i++)
-                {
-                    var group = ChannelGroups[i];
-                    for (int k = 0; k < group.NumRecords; k++)
-                    {
-                        var recordData = new byte[group.RecordSize];
-                        var read = Mdf.Data.Read(recordData, 0, recordData.Length);
-                        if (read != recordData.Length)
-                            throw new FormatException();
-
-                        records.Add(new DataRecord(group, recordData));
-                    }
-                }
-
-                return records.ToArray();
-            }
-        }
         public TriggerBlock Trigger { get; set; }
-        
+
         public ushort NumChannelGroups { get; private set; }
         /// <summary>
         /// Number of record IDs in the data block
@@ -64,6 +40,17 @@
         /// 2 = record ID(UINT8) before and after each data record
         /// </summary>
         public ushort NumRecordIds { get; private set; }
+        public DataRecord[] Records
+        {
+            get
+            {
+                if (records == null)
+                    records = ReadRecords();
+
+                return records;
+            }
+            set { records = value; }
+        }
         public uint Reserved { get; set; }
 
         public static DataGroupBlock Create(Mdf mdf)
@@ -121,6 +108,30 @@
             return block;
         }
 
+        public DataRecord[] ReadRecords()
+        {
+            stream.Position = ptrDataBlock;
+
+            var recordsList = new List<DataRecord>();
+
+            for (int i = 0; i < NumChannelGroups; i++)
+            {
+                var group = ChannelGroups[i];
+
+                for (int k = 0; k < group.NumRecords; k++)
+                {
+                    var recordData = new byte[group.RecordSize];
+                    var read = stream.Read(recordData, 0, recordData.Length);
+                    if (read != recordData.Length)
+                        throw new FormatException();
+
+                    recordsList.Add(new DataRecord(group, recordData));
+                }
+            }
+
+            return recordsList.ToArray();
+        }
+
         internal override ushort GetSize()
         {
             return 28;
@@ -131,6 +142,16 @@
 
             for (int i = 0; i < ChannelGroups.Count; i++)
                 size += ChannelGroups[i].GetSizeTotal();
+
+            if (records != null)
+                for (int i = 0; i < records.Length; i++)
+                {
+                    var r = records[i];
+                    if (r.Data == null)
+                        continue;
+
+                    size += r.Data.Length;
+                }
 
             return size;
         }
@@ -163,6 +184,26 @@
             var bytesNextBlockLink = BitConverter.GetBytes(index);
 
             Array.Copy(bytesNextBlockLink, 0, array, blockIndex + 4, bytesNextBlockLink.Length);
+        }
+        internal void WriteRecords(byte[] array, ref int index, int blockIndex)
+        {
+            if (records == null || records.Length == 0)
+                return;
+
+            var bytesRecordsLink = BitConverter.GetBytes(index);
+
+            Array.Copy(bytesRecordsLink, 0, array, blockIndex + 16, bytesRecordsLink.Length);
+
+            for (int i = 0; i < records.Length; i++)
+            {
+                var r = records[i];
+                if (r.Data == null)
+                    continue;
+
+                Array.Copy(r.Data, 0, array, index, r.Data.Length);
+
+                index += r.Data.Length;
+            }
         }
     }
 }

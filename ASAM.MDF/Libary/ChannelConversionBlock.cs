@@ -11,6 +11,7 @@
 
         private ChannelConversionBlock(Mdf mdf) : base(mdf)
         {
+            AdditionalConversionData = new ConversionData(this);
         }
 
         public bool PhysicalValueRangeValid { get; set; }
@@ -23,7 +24,7 @@
         }
         public ConversionType ConversionType { get; set; }
         public ushort SizeInformation { get; private set; }
-        public byte[] AdditionalConversionData { get; set; }
+        public ConversionData AdditionalConversionData { get; internal set; }
 
         public static ChannelConversionBlock Create(Mdf mdf)
         {
@@ -55,9 +56,9 @@
 
             if (block.SizeInformation > 0)
             {
-                block.AdditionalConversionData = new byte[block.SizeInformation];
+                block.AdditionalConversionData.Data = new byte[ConversionData.GetEstimatedParametersSize(block.ConversionType)];
 
-                Array.Copy(data, 42, block.AdditionalConversionData, 0, block.AdditionalConversionData.Length);
+                Array.Copy(data, 42, block.AdditionalConversionData.Data, 0, block.AdditionalConversionData.Data.Length);
             }
 
             return block;
@@ -67,8 +68,8 @@
         {
             ushort size = 46;
 
-            if (AdditionalConversionData != null)
-                size += (ushort)AdditionalConversionData.Length;
+            if (AdditionalConversionData.Data != null)
+                size += (ushort)AdditionalConversionData.Data.Length;
 
             return size;
         }
@@ -88,12 +89,12 @@
             Array.Copy(bytesPhyUnit, 0, array, index + 22, bytesPhyUnit.Length);
             Array.Copy(bytesConversionType, 0, array, index + 42, bytesConversionType.Length);
 
-            if (AdditionalConversionData != null && AdditionalConversionData.Length > 0)
+            if (AdditionalConversionData.Data != null && AdditionalConversionData.Data.Length > 0)
             {
-                var bytesSizeInformation = BitConverter.GetBytes(AdditionalConversionData.Length);
+                var bytesSizeInformation = BitConverter.GetBytes(ConversionData.GetEstimatedParametersCount(ConversionType));
 
                 Array.Copy(bytesSizeInformation, 0, array, index + 44, bytesSizeInformation.Length);
-                Array.Copy(AdditionalConversionData, 0, array, index + 46, AdditionalConversionData.Length);
+                Array.Copy(AdditionalConversionData.Data, 0, array, index + 46, AdditionalConversionData.Data.Length);
             }
 
             index += GetSize();
