@@ -165,7 +165,7 @@
             
             var bytes = mdf.GetBytes();
 
-            File.WriteAllBytes("C:\\we\\test.dat", bytes);
+            ////File.WriteAllBytes("C:\\we\\test.dat", bytes);
             
             // Read.
             using (var stream = new MemoryStream(bytes))
