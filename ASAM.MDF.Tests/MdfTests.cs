@@ -78,8 +78,11 @@
             var conversionSize = (ushort)16;
             var conversionData = new double[] { 1, 2 };
 
+            var ch2ShortValue = (short)-204;
+            var ch2ShortValueBytes = BitConverter.GetBytes(ch2ShortValue);
+
             var recordsCount = (uint)2;
-            var record1 = new byte[] { /*time|double*/ 1, 1, 1, 1, 1, 1, 1, 1, /*data|short*/ 2, 2 };
+            var record1 = new byte[] { /*time|double*/ 1, 1, 1, 1, 1, 1, 1, 1, /*data|short*/ ch2ShortValueBytes[0], ch2ShortValueBytes[1] };
             var record2 = new byte[] { /*time|double*/ 3, 3, 3, 3, 3, 3, 3, 3, /*data|short*/ 4, 4 };
 
             // Write.
@@ -273,6 +276,8 @@
                 Assert.AreEqual(recordsCount, dataGroup.Records.Length);
                 Assert.That(record1, Is.EquivalentTo(dataGroup.Records[0].Data));
                 Assert.That(record2, Is.EquivalentTo(dataGroup.Records[1].Data));
+
+                Assert.AreEqual(ch2ShortValue, dataGroup.Records[0].GetValue(channel2));
             }
         }
     }

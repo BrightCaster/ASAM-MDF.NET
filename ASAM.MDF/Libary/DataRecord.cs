@@ -44,6 +44,10 @@
                         for (int i = 0; i < channel.NumberOfBits; i++)
                             result |= (GetBit(Data, channel.BitOffset + i) ? 1 : 0) << i;
 
+                        var maxValue = Math.Pow(2, channel.NumberOfBits) / 2;
+                        if (result > maxValue)
+                            result -= (int)(maxValue * 2);
+
                         value = result;
                         break;
                     }
