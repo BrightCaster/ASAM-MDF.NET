@@ -5,12 +5,15 @@
 
     public class ChannelGroupBlock : Block, INext<ChannelGroupBlock>
     {
-        private uint ptrNextChannelGroup;
-        private uint ptrFirstChannelBlock;
-        private uint ptrTextBlock;
-        private uint ptrFirstSampleReductionBlock;
+        private ulong ptrNextChannelGroup;
+        private ulong ptrFirstChannelBlock;
+        private ulong ptrTextName;
+        private ulong ptrTextBlock;
+
+        public ulong SourceInfo { get; private set; }
+
+        private ulong ptrFirstSampleReductionBlock;
         private ChannelGroupBlock next;
-        private Stream stream;
 
         private ChannelGroupBlock(Mdf mdf) : base(mdf)
         {
@@ -21,7 +24,7 @@
             get
             {
                 if (next == null && ptrNextChannelGroup != 0)
-                    next = Read(Mdf, stream, ptrNextChannelGroup);
+                    next = Read(Mdf, ptrNextChannelGroup);
 
                 return next;
             }
@@ -29,7 +32,15 @@
 
         public ChannelCollection Channels { get; private set; }
         public TextBlock Comment { get; set; }
-        public ushort RecordID { get; private set; }
+        public ulong RecordID { get; private set; }
+        public ulong CycleCount { get; private set; }
+        public ushort Flags { get; private set; }
+
+        private object pathSeparator;
+
+        public uint Reserved1 { get; private set; }
+        public uint DataBytes { get; private set; }
+        public uint InvalidBytes { get; private set; }
         public ushort NumChannels { get; private set; }
         public ushort RecordSize { get; set; }
         public uint NumRecords { get; set; }
@@ -44,44 +55,60 @@
             };
         }
 
-        internal static ChannelGroupBlock Read(Mdf mdf, Stream stream, uint position)
+        internal static ChannelGroupBlock Read(Mdf mdf, ulong position)
         {
-            stream.Position = position;
+            mdf.UpdatePosition(position);
 
             var block = new ChannelGroupBlock(mdf);
-            block.Read(stream);
-            block.stream = stream;
-
-            var data = new byte[block.Size - 4];
-            var read = stream.Read(data, 0, data.Length);
-
-            if (read != data.Length)
-                throw new FormatException();
+            block.Read();
 
             block.next = null;
             block.Channels = new ChannelCollection(mdf);
             block.Comment = null;
             block.SampleReductions = null;
 
-            block.ptrNextChannelGroup = BitConverter.ToUInt32(data, 0);
-            block.ptrFirstChannelBlock = BitConverter.ToUInt32(data, 4);
-            block.ptrTextBlock = BitConverter.ToUInt32(data, 8);
-            block.RecordID = BitConverter.ToUInt16(data, 12);
-            block.NumChannels = BitConverter.ToUInt16(data, 14);
-            block.RecordSize = BitConverter.ToUInt16(data, 16);
-            block.NumRecords = BitConverter.ToUInt32(data, 18);
+            if (mdf.IDBlock.Version == 400)
+            {
+                block.ptrNextChannelGroup = mdf.ReadU64();
+                block.ptrFirstChannelBlock = mdf.ReadU64();
+                block.ptrTextName = mdf.ReadU64();
+                block.SourceInfo = mdf.ReadU64();
+                block.ptrFirstSampleReductionBlock = mdf.ReadU64();
+                block.ptrTextBlock = mdf.ReadU64();
+                block.RecordID = mdf.ReadU64();
+                block.CycleCount= mdf.ReadU64();
+                block.Flags = mdf.ReadU16();
+                block.pathSeparator = mdf.ReadU16();
+                block.Reserved1 = mdf.ReadU32();
+                block.DataBytes = mdf.ReadU32();
+                block.InvalidBytes = mdf.ReadU32();
+            }
+            else
+            {
+                block.ptrNextChannelGroup = mdf.ReadU32();
+                block.ptrFirstChannelBlock = mdf.ReadU32();
+                block.ptrTextBlock = mdf.ReadU32();
+                block.RecordID = mdf.ReadU16();
+                block.NumChannels = mdf.ReadU16();
+                block.RecordSize = mdf.ReadU16();
+                block.NumRecords = mdf.ReadU32();
 
-            if (data.Length >= 26)
-                block.ptrFirstSampleReductionBlock = BitConverter.ToUInt32(data, 22);
+                if (block.Size >= 26)
+                    block.ptrFirstSampleReductionBlock = mdf.ReadU32();
+            }
+
+            if (block.ptrNextChannelGroup != 0)
+            {
+                block.Next.ReadInternal(mdf, block.ptrNextChannelGroup);
+            }
 
             if (block.ptrTextBlock != 0)
             {
-                stream.Position = block.ptrTextBlock;
-                block.Comment = TextBlock.Read(mdf, stream);
+                block.Comment = TextBlock.Read(mdf);
             }
 
             if (block.ptrFirstChannelBlock != 0)
-                block.Channels.Read(ChannelBlock.Read(mdf, stream, block.ptrFirstChannelBlock));
+                block.Channels.Read(ChannelBlock.Read(mdf, block.ptrFirstChannelBlock));
 
             //if (m_ptrFirstSampleReductionBlock != 0)
             //{
@@ -90,6 +117,10 @@
             //}
 
             return block;
+        }
+        internal void ReadInternal(Mdf mdf, ulong position)
+        {
+            Read(mdf, position);
         }
 
         internal override ushort GetSize()

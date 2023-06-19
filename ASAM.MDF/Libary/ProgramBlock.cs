@@ -1,7 +1,7 @@
 ﻿namespace ASAM.MDF.Libary
 {
     using System;
-    using System.IO;
+    using System.Linq;
 
     public class ProgramBlock : Block
     {
@@ -44,21 +44,12 @@
             return "{PRBLOCK: Data[" + Data.Length + "]}";
         }
 
-        internal static ProgramBlock Read(Mdf mdf, Stream stream)
+        internal static ProgramBlock Read(Mdf mdf)
         {
             var block = new ProgramBlock(mdf);
-            block.Read(stream);
+            block.Read();
 
-            if (block.Identifier != "PR")
-                throw new FormatException();
-
-            var data = new byte[block.Size - 4];
-            var read = stream.Read(data, 0, data.Length);
-
-            if (read != data.Length)
-                throw new FormatException();
-
-            block.data = data;
+            block.Data = mdf.Data.Take(new Range(new Index((int)mdf.position),new Index((int)mdf.position + (int)block.Size))).ToArray();
 
             return block;
         }

@@ -8,10 +8,11 @@
     {
         private Stream stream;
         private DataGroupBlock nextBlock;
-        private uint ptrNextDataGroup;
-        private uint ptrFirstChannelGroupBlock;
-        private uint ptrTriggerBlock;
-        private uint ptrDataBlock;
+        private ulong ptrNextDataGroup;
+        private ulong ptrFirstChannelGroupBlock;
+        private ulong ptrTriggerBlock;
+        private ulong ptrDataBlock;
+        private ulong ptrTextBlock;
         private DataRecord[] records;
 
         private DataGroupBlock(Mdf mdf) : base(mdf)
@@ -24,7 +25,7 @@
             get
             {
                 if (nextBlock == null && ptrNextDataGroup != 0)
-                    nextBlock = Read(Mdf, stream, ptrNextDataGroup);
+                    nextBlock = Read(Mdf, ptrNextDataGroup);
 
                 return nextBlock;
             }
@@ -40,6 +41,8 @@
         /// 2 = record ID(UINT8) before and after each data record
         /// </summary>
         public ushort NumRecordIds { get; private set; }
+        public byte Reserved1 { get; private set; }
+
         public DataRecord[] Records
         {
             get
@@ -60,36 +63,43 @@
                 Identifier = "DG"
             };
         }
-        public static DataGroupBlock Read(Mdf mdf, Stream stream, uint position)
+        public static DataGroupBlock Read(Mdf mdf, ulong position)
         {
-            stream.Position = position;
+            mdf.UpdatePosition(position);
 
             var block = new DataGroupBlock(mdf);
-            block.Read(stream);
-            block.stream = stream;
-
-            var data = new byte[block.Size - 4];
-            var read = stream.Read(data, 0, data.Length);
-
-            if (read != data.Length)
-                throw new FormatException();
+            block.Read();
 
             block.nextBlock = null;
             block.Trigger = null;
             block.Reserved = 0;
 
-            block.ptrNextDataGroup = BitConverter.ToUInt32(data, 0);
-            block.ptrFirstChannelGroupBlock = BitConverter.ToUInt32(data, 4);
-            block.ptrTriggerBlock = BitConverter.ToUInt32(data, 8);
-            block.ptrDataBlock = BitConverter.ToUInt32(data, 12);
-            block.NumChannelGroups = BitConverter.ToUInt16(data, 16);
-            block.NumRecordIds = BitConverter.ToUInt16(data, 18);
+            if (mdf.IDBlock.Version == 400)
+            {
+                block.ptrNextDataGroup = mdf.ReadU64();
+                block.ptrFirstChannelGroupBlock = mdf.ReadU64();
+                block.ptrDataBlock = mdf.ReadU64();
+                block.ptrTextBlock = mdf.ReadU64();
+                block.NumRecordIds = mdf.ReadByte();
+                block.Reserved1 = mdf.ReadByte();
+            }
+            else
+            {
+                block.ptrNextDataGroup = mdf.ReadU32();
+                block.ptrFirstChannelGroupBlock = mdf.ReadU32();
+                block.ptrTriggerBlock = mdf.ReadU32();
+                block.ptrDataBlock = mdf.ReadU32();
+                block.NumChannelGroups = mdf.ReadU16();
+                block.NumRecordIds = mdf.ReadU16();
 
-            if (data.Length >= 24)
-                block.Reserved = BitConverter.ToUInt32(data, 20);
+                if (block.Size >= 24)
+                    block.Reserved = mdf.ReadU32();
+            }
+            if (block.ptrNextDataGroup != 0)
+                block.Next.ReadInternal(mdf, block.ptrNextDataGroup);
 
             if (block.ptrFirstChannelGroupBlock != 0)
-                block.ChannelGroups.Read(ChannelGroupBlock.Read(mdf, stream, block.ptrFirstChannelGroupBlock));
+                block.ChannelGroups.Read(ChannelGroupBlock.Read(mdf, block.ptrFirstChannelGroupBlock));
 
             /// TODO: Call Trigger Blocks
             //if (m_ptrTriggerBlock != 0)
@@ -130,6 +140,10 @@
             }
 
             return recordsList.ToArray();
+        }
+        internal void ReadInternal(Mdf mdf, ulong position)
+        {
+            Read(mdf,position);
         }
 
         internal override ushort GetSize()

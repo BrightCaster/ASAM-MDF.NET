@@ -2,6 +2,8 @@
 {
     using System;
     using System.IO;
+    using System.Net.Cache;
+    using System.Security.Cryptography;
     using System.Text;
 
     /// <summary>
@@ -18,10 +20,12 @@
         }
 
         public Mdf Mdf { get; private set; }
-
-        public ushort Size { get; private set; }
-        public uint BlockAddress { get; private set; }
+        public ushort IdHash { get; private set; }
         public string Identifier { get; protected set; }
+        public uint Reserved { get; set; }
+        public ulong Size { get; private set; }
+        public ulong LinksCount { get; private set; }
+        public ulong BlockAddress { get; private set; }
 
         internal virtual ushort GetSize()
         {
@@ -31,18 +35,22 @@
         {
             return GetSize();
         }
-        internal void Read(Stream stream)
+        internal void Read()
         {
-            BlockAddress = (uint)stream.Position;
+            BlockAddress = Mdf.position;
 
-            var data = new byte[4];
-            var read = stream.Read(data, 0, data.Length);
+            IdHash = Mdf.ReadU16();
+            Identifier = Mdf.IDBlock.Encoding.GetString(Mdf.Data, Mdf.GetIndexator(2), 2); // blockaddress = 0
+            Mdf.UpdatePosition(BlockAddress + 4);
 
-            if (read != data.Length)
-                throw new FormatException();
-
-            Identifier = Mdf.IDBlock.Encoding.GetString(data, 0, 2);
-            Size = BitConverter.ToUInt16(data, 2);
+            if (Mdf.IDBlock.Version == 400)
+            {
+                Reserved= Mdf.ReadU32();
+                Size = Mdf.ReadU64();
+                LinksCount = Mdf.ReadU64();
+            }
+            else
+                Size = Mdf.ReadU16();
 
             if (Size <= 4)
                 throw new FormatException();
