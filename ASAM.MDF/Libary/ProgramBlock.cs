@@ -44,12 +44,12 @@
             return "{PRBLOCK: Data[" + Data.Length + "]}";
         }
 
-        internal static ProgramBlock Read(Mdf mdf)
+        internal static ProgramBlock Read(Mdf mdf, ulong position)
         {
             var block = new ProgramBlock(mdf);
             block.Read();
 
-            block.Data = mdf.Data.Take(new Range(new Index((int)mdf.position),new Index((int)mdf.position + (int)block.Size))).ToArray();
+            block.Data = mdf.Data.ToList().GetRange((int)position, (int)block.Size).ToArray();
 
             return block;
         }

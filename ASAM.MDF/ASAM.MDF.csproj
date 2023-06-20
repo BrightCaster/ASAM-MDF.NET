@@ -67,6 +67,7 @@
     <Compile Include="Libary\RawCache.cs" />
     <Compile Include="Libary\SampleReductionBlock.cs" />
     <Compile Include="Libary\SampleReductionCollection.cs" />
+    <Compile Include="Libary\SourceInformation.cs" />
     <Compile Include="Libary\StreamReadHelper.cs" />
     <Compile Include="Libary\TextBlock.cs" />
     <Compile Include="Libary\TriggerBlock.cs" />

@@ -17,7 +17,7 @@
             data = bytes;
 
             DataGroups = new DataGroupCollection(this);
-            IDBlock = IdentificationBlock.Read(this, bytes);
+            IDBlock = IdentificationBlock.Read(this);
             HDBlock = HeaderBlock.Read(this);
         }
         public Mdf()

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Text;
 
 namespace ASAM.MDF.Libary
@@ -13,10 +14,7 @@ namespace ASAM.MDF.Libary
     public VectorCanBlockSupplement(Mdf mdf)
     {
       byte[] data = new byte[80];
-      int read = mdf.Data.Read(data, 0, data.Length);
-
-      if (read != data.Length)
-        throw new FormatException();
+      data = mdf.Data.Take(data.Length).ToArray();
 
       IdentifierOfCanMessage = BitConverter.ToUInt32(data, 0);
       IndexOfCanChannel = BitConverter.ToUInt32(data, 4);

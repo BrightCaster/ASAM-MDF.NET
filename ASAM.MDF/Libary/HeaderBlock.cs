@@ -211,7 +211,7 @@
 
             ulong ptrFirstDataGroup, ptrTextBlock, ptrProgramBlock = 0;
 
-            if (mdf.IDBlock.Version == 400)
+            if (mdf.IDBlock.Version >= 400)
             {
                 ptrFirstDataGroup = mdf.ReadU64(); //Adress DataGroup
                                                    //skiped: FileHistoryBlock (not used) +8
@@ -262,13 +262,13 @@
             // Check if ptrTextBlock is null
             if (ptrTextBlock != 0)
             {
-                block.FileComment = TextBlock.Read(mdf);
+                block.FileComment = TextBlock.Read(mdf, ptrTextBlock);
             }
 
             // Check if ptrProgramBlock is null
             if (ptrProgramBlock != 0)
             {
-                block.ProgramBlock = ProgramBlock.Read(mdf);
+                block.ProgramBlock = ProgramBlock.Read(mdf, ptrProgramBlock);
             }
 
             // Check if ptrFirstDataGroup is null

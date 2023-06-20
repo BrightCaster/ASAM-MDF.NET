@@ -9,8 +9,7 @@
         private ulong ptrFirstChannelBlock;
         private ulong ptrTextName;
         private ulong ptrTextBlock;
-
-        public ulong SourceInfo { get; private set; }
+        private ulong ptrSourceInfo;
 
         private ulong ptrFirstSampleReductionBlock;
         private ChannelGroupBlock next;
@@ -45,6 +44,7 @@
         public ushort RecordSize { get; set; }
         public uint NumRecords { get; set; }
         public SampleReductionCollection SampleReductions { get; private set; }
+        public TextBlock TextName { get; private set; }
 
         public static ChannelGroupBlock Create(Mdf mdf)
         {
@@ -67,12 +67,12 @@
             block.Comment = null;
             block.SampleReductions = null;
 
-            if (mdf.IDBlock.Version == 400)
+            if (mdf.IDBlock.Version >= 400)
             {
                 block.ptrNextChannelGroup = mdf.ReadU64();
                 block.ptrFirstChannelBlock = mdf.ReadU64();
                 block.ptrTextName = mdf.ReadU64();
-                block.SourceInfo = mdf.ReadU64();
+                block.ptrSourceInfo = mdf.ReadU64();
                 block.ptrFirstSampleReductionBlock = mdf.ReadU64();
                 block.ptrTextBlock = mdf.ReadU64();
                 block.RecordID = mdf.ReadU64();
@@ -97,15 +97,11 @@
                     block.ptrFirstSampleReductionBlock = mdf.ReadU32();
             }
 
-            if (block.ptrNextChannelGroup != 0)
-            {
-                block.Next.ReadInternal(mdf, block.ptrNextChannelGroup);
-            }
-
             if (block.ptrTextBlock != 0)
-            {
-                block.Comment = TextBlock.Read(mdf);
-            }
+                block.Comment = TextBlock.Read(mdf, block.ptrTextBlock);
+            
+            if (block.ptrTextName != 0)
+                block.TextName = TextBlock.Read(mdf, block.ptrTextName);
 
             if (block.ptrFirstChannelBlock != 0)
                 block.Channels.Read(ChannelBlock.Read(mdf, block.ptrFirstChannelBlock));
@@ -117,10 +113,6 @@
             //}
 
             return block;
-        }
-        internal void ReadInternal(Mdf mdf, ulong position)
-        {
-            Read(mdf, position);
         }
 
         internal override ushort GetSize()

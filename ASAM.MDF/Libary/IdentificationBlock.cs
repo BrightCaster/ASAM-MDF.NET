@@ -162,26 +162,20 @@
 
             return block;
         }
-        public static IdentificationBlock Read(Mdf mdf, Stream stream)
+        public static IdentificationBlock Read(Mdf mdf)
         {
-            var data = new byte[64];
-            var read = stream.Read(data, 0, data.Length);
-
-            if (read != data.Length)
-                throw new FormatException();
-
             var block = new IdentificationBlock();
 
             block.Mdf = mdf;
-            block.fileIdentifier = Encoding.UTF8.GetString(data, 0, 8).Humanize();
-            block.formatIdentifier = Encoding.UTF8.GetString(data, 8, 8).Humanize();
-            block.programIdentifier = Encoding.UTF8.GetString(data, 16, 8).Humanize();
-            block.ByteOrder = (ByteOrder)BitConverter.ToUInt16(data, 24);
-            block.FloatingPointFormat = (FloatingPointFormat)BitConverter.ToUInt16(data, 26);
-            block.Version = BitConverter.ToUInt16(data, 28);
-            block.CodePage = BitConverter.ToUInt16(data, 30);
-            block.reserved1 = Encoding.UTF8.GetString(data, 32, 2).Humanize();
-            block.reserved2 = Encoding.UTF8.GetString(data, 34, 30).Humanize();
+            block.fileIdentifier = Encoding.UTF8.GetString(mdf.Data, mdf.GetIndexator(8), 8).Humanize();
+            block.formatIdentifier = Encoding.UTF8.GetString(mdf.Data, mdf.GetIndexator(8), 8).Humanize();
+            block.programIdentifier = Encoding.UTF8.GetString(mdf.Data, mdf.GetIndexator(8), 8).Humanize();
+            block.ByteOrder = (ByteOrder)mdf.ReadU16();
+            block.FloatingPointFormat = (FloatingPointFormat)mdf.ReadU16();
+            block.Version = mdf.ReadU16();
+            block.CodePage = mdf.ReadU16();
+            block.reserved1 = Encoding.UTF8.GetString(mdf.Data, mdf.GetIndexator(2), 2).Humanize();
+            block.reserved2 = Encoding.UTF8.GetString(mdf.Data, mdf.GetIndexator(30), 30).Humanize();
 
             return block;
         }

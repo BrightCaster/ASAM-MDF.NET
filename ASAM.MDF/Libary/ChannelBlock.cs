@@ -35,7 +35,6 @@
 
         private ChannelConversionBlock channelConversion;
         private ChannelBlock next;
-        private Stream stream;
 
         private ChannelBlock(Mdf mdf) : base(mdf)
         {
@@ -128,29 +127,29 @@
             if (mdf.IDBlock.Version == 400)
             {
                 block.ptrNextChannelBlock = mdf.ReadU64();
-                block.ConponentAddress=mdf.ReadU64();
-                block.TextBlockChanelName=mdf.ReadU64();
+                block.ConponentAddress = mdf.ReadU64();
+                block.TextBlockChanelName = mdf.ReadU64();
                 block.ptrChannelExtensionBlock = mdf.ReadU64();
                 block.ptrChannelConversionBlock = mdf.ReadU64();
                 block.ptrDataBlockSignal = mdf.ReadU64();
-                block.ptrUnit=mdf.ReadU64();
-                block.ptrTextBlockComment=mdf.ReadU64();
-                block.ptrAttachment=mdf.ReadU64();
+                block.ptrUnit = mdf.ReadU64();
+                block.ptrTextBlockComment = mdf.ReadU64();
+                block.ptrAttachment = mdf.ReadU64();
                 block.ptrDefaultDGBlock = mdf.ReadU64();
                 block.ptrDefaultCGBlock = mdf.ReadU64();
                 block.ptrDefaultCurrentChanelBlock = mdf.ReadU64();
                 block.Type = (ChannelType)mdf.ReadByte();
-                block.ptrSyncType=mdf.ReadByte();
-                block.ptrDataType=mdf.ReadByte();
-                block.BitOffset=mdf.ReadByte();
-                block.ByteOffset=mdf.ReadU32();
-                block.BitLength=mdf.ReadU32();
-                block.ChannelFlags=mdf.ReadU32();
+                block.ptrSyncType = mdf.ReadByte();
+                block.ptrDataType = mdf.ReadByte();
+                block.BitOffset = mdf.ReadByte();
+                block.ByteOffset = mdf.ReadU32();
+                block.BitLength = mdf.ReadU32();
+                block.ChannelFlags = mdf.ReadU32();
                 block.InvalidBitPos = mdf.ReadU32();
-                block.Precision=mdf.ReadByte();
-                block.Reserved1=mdf.ReadByte();
+                block.Precision = mdf.ReadByte();
+                block.Reserved1 = mdf.ReadByte();
                 block.AttachmentCount = mdf.ReadU32();
-                block.ValRangeMin=mdf.Read64();
+                block.ValRangeMin = mdf.Read64();
                 block.ValRangeMax = mdf.Read64();
                 block.LimitMin = mdf.Read64();
                 block.LimitMax = mdf.Read64();
@@ -189,12 +188,12 @@
                 if (mdf.IDBlock.Version >= MIN_VERSION_ADDITIONAL_BYTE_OFFSET)
                     block.AdditionalByteOffset = mdf.ReadU16();
             }
-            if (block.ptrChannelExtensionBlock != 0)
-            {
-                if (mdf.IDBlock.Version == 400)
+            //if (block.ptrChannelExtensionBlock != 0)
+            //{
+            //    if (mdf.IDBlock.Version == 400)
 
-                block.SourceDepending = new ChannelExtensionBlock(mdf, block.ptrChannelExtensionBlock);
-            }
+            //    block.SourceDepending = new ChannelExtensionBlock(mdf, block.ptrChannelExtensionBlock);
+            //}
 
             return block;
         }

@@ -34,31 +34,25 @@
                 PhysicalUnit = "",
             };
         }
-        internal static ChannelConversionBlock Read(Mdf mdf, Stream stream, uint position)
+        internal static ChannelConversionBlock Read(Mdf mdf, ulong position)
         {
-            stream.Position = position;
+            mdf.position = position;
 
             var block = new ChannelConversionBlock(mdf);
-            block.Read(stream);
+            block.Read();
 
-            var data = new byte[block.Size - 4];
-            var read = stream.Read(data, 0, data.Length);
-
-            if (read != data.Length)
-                throw new FormatException();
-
-            block.PhysicalValueRangeValid = BitConverter.ToInt16(data, 0) != 0;
-            block.MinPhysicalValue = BitConverter.ToDouble(data, 2);
-            block.MaxPhysicalValue = BitConverter.ToDouble(data, 10);
-            block.PhysicalUnit = mdf.IDBlock.Encoding.GetString(data, 18, 20).Humanize();
-            block.ConversionType = (ConversionType)BitConverter.ToUInt16(data, 38);
-            block.SizeInformation = BitConverter.ToUInt16(data, 40);
+            block.PhysicalValueRangeValid = mdf.Read16() != 0;
+            block.MinPhysicalValue = mdf.ReadDouble();
+            block.MaxPhysicalValue = mdf.ReadDouble();
+            block.PhysicalUnit = mdf.IDBlock.Encoding.GetString(mdf.Data, mdf.GetIndexator(20), 20).Humanize();
+            block.ConversionType = (ConversionType)mdf.ReadU16();
+            block.SizeInformation = mdf.ReadU16();
 
             if (block.SizeInformation > 0)
             {
                 block.AdditionalConversionData.Data = new byte[ConversionData.GetEstimatedParametersSize(block.ConversionType)];
 
-                Array.Copy(data, 42, block.AdditionalConversionData.Data, 0, block.AdditionalConversionData.Data.Length);
+                Array.Copy(mdf.Data, 42, block.AdditionalConversionData.Data, 0, block.AdditionalConversionData.Data.Length);
             }
 
             return block;

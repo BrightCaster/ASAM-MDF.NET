@@ -4,6 +4,7 @@ using System.Text;
 namespace ASAM.MDF.Libary
 {
     using ASAM.MDF.Libary.Types;
+    using System.Linq;
 
     public class ChannelExtensionBlock : Block
     {
@@ -14,11 +15,12 @@ namespace ASAM.MDF.Libary
         public ChannelExtensionBlock(Mdf mdf, ulong position)
           : base(mdf)
         {
-            mdf.UpdatePosition(position);
+            byte[] data = new byte[Size - 4];
+            data = Mdf.Data.Take(data.Length).ToArray();
 
-          Type = (ExtensionType)mdf.ReadU16();
+            Type = (ExtensionType)BitConverter.ToUInt16(data, 0);
 
-          if (Type == ExtensionType.DIM)
+            if (Type == ExtensionType.DIM)
           {
             DimBlockSupplement = new DimBlockSupplement(mdf);
           }

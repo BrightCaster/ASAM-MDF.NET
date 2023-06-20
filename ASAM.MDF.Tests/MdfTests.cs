@@ -173,7 +173,7 @@
             // Read.
             using (var stream = new MemoryStream(bytes))
             {
-                mdf = new Mdf(stream);
+                mdf = new Mdf(bytes);
 
                 // IDBLOCK.
                 Assert.NotNull(mdf.IDBlock);

@@ -54,7 +54,10 @@
             }
             set { records = value; }
         }
-        public uint Reserved { get; set; }
+
+        public TextBlock FileComment { get; private set; }
+
+        //public uint Reserved { get; set; }
 
         public static DataGroupBlock Create(Mdf mdf)
         {
@@ -74,7 +77,7 @@
             block.Trigger = null;
             block.Reserved = 0;
 
-            if (mdf.IDBlock.Version == 400)
+            if (mdf.IDBlock.Version >= 400)
             {
                 block.ptrNextDataGroup = mdf.ReadU64();
                 block.ptrFirstChannelGroupBlock = mdf.ReadU64();
@@ -95,8 +98,10 @@
                 if (block.Size >= 24)
                     block.Reserved = mdf.ReadU32();
             }
-            if (block.ptrNextDataGroup != 0)
-                block.Next.ReadInternal(mdf, block.ptrNextDataGroup);
+
+
+            if (block.ptrTextBlock != 0)
+                block.FileComment = TextBlock.Read(mdf, block.ptrTextBlock);
 
             if (block.ptrFirstChannelGroupBlock != 0)
                 block.ChannelGroups.Read(ChannelGroupBlock.Read(mdf, block.ptrFirstChannelGroupBlock));
@@ -120,7 +125,7 @@
 
         public DataRecord[] ReadRecords()
         {
-            stream.Position = ptrDataBlock;
+            stream.Position = (long)ptrDataBlock;
 
             var recordsList = new List<DataRecord>();
 
@@ -140,10 +145,6 @@
             }
 
             return recordsList.ToArray();
-        }
-        internal void ReadInternal(Mdf mdf, ulong position)
-        {
-            Read(mdf,position);
         }
 
         internal override ushort GetSize()
