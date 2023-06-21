@@ -39,9 +39,10 @@
         {
             BlockAddress = Mdf.position;
 
-            IdHash = Mdf.ReadU16();
+            if (Mdf.IDBlock.Version>=400)
+                IdHash = Mdf.ReadU16();
+            
             Identifier = Mdf.IDBlock.Encoding.GetString(Mdf.Data, Mdf.GetIndexator(2), 2); // blockaddress = 0
-            Mdf.UpdatePosition(BlockAddress + 4);
 
             if (Mdf.IDBlock.Version == 400)
             {
