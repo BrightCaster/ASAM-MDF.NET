@@ -20,6 +20,7 @@
             var bytes = File.ReadAllBytes(filename);
 
             var mdf = new Mdf(bytes);
+            mdf.HDBlock.Author = "";
         }
 
 

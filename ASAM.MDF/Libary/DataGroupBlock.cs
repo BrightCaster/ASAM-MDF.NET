@@ -6,7 +6,6 @@
 
     public class DataGroupBlock : Block, INext<DataGroupBlock>
     {
-        private Stream stream;
         private DataGroupBlock nextBlock;
         private ulong ptrNextDataGroup;
         private ulong ptrFirstChannelGroupBlock;
@@ -47,9 +46,6 @@
         {
             get
             {
-                if (records == null)
-                    records = ReadRecords();
-
                 return records;
             }
             set { records = value; }
@@ -120,12 +116,14 @@
             //    ProgramBlock = new ProgramBlock(mdf);
             //}
 
+            block.Records=block.ReadRecords();
+
             return block;
         }
 
-        public DataRecord[] ReadRecords()
+        internal DataRecord[] ReadRecords()
         {
-            stream.Position = (long)ptrDataBlock;
+            Mdf.UpdatePosition(ptrDataBlock);
 
             var recordsList = new List<DataRecord>();
 
@@ -135,10 +133,7 @@
 
                 for (int k = 0; k < group.NumRecords; k++)
                 {
-                    var recordData = new byte[group.RecordSize];
-                    var read = stream.Read(recordData, 0, recordData.Length);
-                    if (read != recordData.Length)
-                        throw new FormatException();
+                    var recordData = Mdf.ReadBytes(group.RecordSize);
 
                     recordsList.Add(new DataRecord(group, recordData));
                 }

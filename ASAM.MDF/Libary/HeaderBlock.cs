@@ -232,7 +232,7 @@
             }
             else
             {
-                ptrFirstDataGroup = mdf.ReadU64();
+                ptrFirstDataGroup = mdf.ReadU32();
                 ptrTextBlock = mdf.ReadU32();
                 ptrProgramBlock = mdf.ReadU32();
 

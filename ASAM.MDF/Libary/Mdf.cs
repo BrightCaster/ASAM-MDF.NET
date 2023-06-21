@@ -69,5 +69,16 @@
 
             return size;
         }
+
+        internal byte[] ReadBytes(ushort recordSize)
+        {
+            var value = new byte[recordSize];
+
+            Array.Copy(data, (int)position, value, 0, value.Length);
+
+            position += (ulong)value.Length;
+
+            return value;
+        }
     }
 }
