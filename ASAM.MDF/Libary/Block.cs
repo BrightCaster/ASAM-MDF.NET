@@ -42,7 +42,7 @@
             if (Mdf.IDBlock.Version >= 400)
                 IdHash = Mdf.ReadU16();
 
-            Identifier = Mdf.IDBlock.Encoding.GetString(Mdf.Data, Mdf.GetIndexator(2), 2).Humanize(); // blockaddress = 0
+            Identifier = Mdf.GetString(2); // blockaddress = 0
 
             if (Mdf.IDBlock.Version >= 400)
             {

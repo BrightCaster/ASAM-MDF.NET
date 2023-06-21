@@ -116,7 +116,7 @@
             //    ProgramBlock = new ProgramBlock(mdf);
             //}
 
-            block.Records=block.ReadRecords();
+            block.Records = block.ReadRecords();
 
             return block;
         }
@@ -127,15 +127,32 @@
 
             var recordsList = new List<DataRecord>();
 
-            for (int i = 0; i < NumChannelGroups; i++)
+            if (Mdf.IDBlock.Version >= 400)
             {
-                var group = ChannelGroups[i];
-
-                for (int k = 0; k < group.NumRecords; k++)
+                for (int i = 0; i < ChannelGroups.Count; i++)
                 {
-                    var recordData = Mdf.ReadBytes(group.RecordSize);
+                    var group = ChannelGroups[i];
 
-                    recordsList.Add(new DataRecord(group, recordData));
+                    for (int k = 0; k < group.Channels.Count; k++)
+                    {
+                        var recordData = Mdf.ReadBytes((ushort)group.CycleCount);
+
+                        recordsList.Add(new DataRecord(group, recordData));
+                    }
+                }
+            }
+            else
+            {
+                for (int i = 0; i < NumChannelGroups; i++)
+                {
+                    var group = ChannelGroups[i];
+
+                    for (int k = 0; k < group.NumRecords; k++)
+                    {
+                        var recordData = Mdf.ReadBytes(group.RecordSize);
+
+                        recordsList.Add(new DataRecord(group, recordData));
+                    }
                 }
             }
 

@@ -227,8 +227,8 @@
                 block.TimeClass = mdf.ReadByte();
                 block.Flags = mdf.ReadByte();
                 block.Reserved1= mdf.ReadByte();
-                block.StartAngle= mdf.Read64();   
-                block.StartDistance = mdf.Read64();   
+                block.StartAngle= mdf.ReadDouble();   
+                block.StartDistance = mdf.ReadDouble();   
             }
             else
             {

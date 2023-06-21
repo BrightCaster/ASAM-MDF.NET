@@ -70,13 +70,15 @@ namespace ASAM.MDF.Libary
 
             return value[0];
         }
+
+
         public static bool ReadBoolean(this Mdf mdf)
         {
-            var value = BitConverter.ToBoolean(mdf.Data, (int)mdf.position);
+            var value = BitConverter.ToUInt16(mdf.Data, (int)mdf.position);
 
-            mdf.position += 1;
+            mdf.position += 2;
 
-            return value;
+            return value != 0;
         }
         public static double ReadDouble(this Mdf mdf)
         {
@@ -99,6 +101,16 @@ namespace ASAM.MDF.Libary
             mdf.position += count;
 
             return (int)index;
+        }
+
+        public static string GetString(this Mdf mdf, ulong count)
+        {
+            var value = mdf.IDBlock.Encoding.GetString(mdf.Data, mdf.GetIndexator(count), (int)count);
+            var indexLastSymbol = value.IndexOf('\0');
+            if (indexLastSymbol != -1)
+                value = value.Remove(indexLastSymbol);
+            
+            return value;
         }
     }
 }

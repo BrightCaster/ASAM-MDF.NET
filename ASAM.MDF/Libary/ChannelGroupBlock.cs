@@ -78,7 +78,7 @@
                 block.RecordID = mdf.ReadU64();
                 block.CycleCount= mdf.ReadU64();
                 block.Flags = mdf.ReadU16();
-                block.pathSeparator = mdf.ReadU16();
+                block.pathSeparator = mdf.ReadChar();
                 block.Reserved1 = mdf.ReadU32();
                 block.DataBytes = mdf.ReadU32();
                 block.InvalidBytes = mdf.ReadU32();

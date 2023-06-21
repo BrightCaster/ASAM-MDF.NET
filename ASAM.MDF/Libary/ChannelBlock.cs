@@ -124,7 +124,7 @@
             block.Dependency = null;
             block.Comment = null;
 
-            if (mdf.IDBlock.Version == 400)
+            if (mdf.IDBlock.Version >= 400)
             {
                 block.ptrNextChannelBlock = mdf.ReadU64();
                 block.ConponentAddress = mdf.ReadU64();
@@ -180,7 +180,7 @@
                 block.SampleRate = mdf.ReadDouble();
 
                 if (mdf.IDBlock.Version >= MIN_VERSION_LONG_SIGNAL_NAME)
-                    block.ptrLongSignalName = mdf.ReadU32();
+                    block.ptrLongSignalName =  mdf.ReadU32();
 
                 if (mdf.IDBlock.Version >= MIN_VERSION_DISPLAY_NAME)
                     block.ptrDisplayName = mdf.ReadU32();
@@ -188,6 +188,13 @@
                 if (mdf.IDBlock.Version >= MIN_VERSION_ADDITIONAL_BYTE_OFFSET)
                     block.AdditionalByteOffset = mdf.ReadU16();
             }
+
+            if (block.TextBlockChanelName != 0)
+                block.LongSignalName = TextBlock.Read(mdf, block.TextBlockChanelName);
+
+
+            if (block.ptrLongSignalName != 0)
+                block.LongSignalName = TextBlock.Read(mdf, block.ptrLongSignalName);
             //if (block.ptrChannelExtensionBlock != 0)
             //{
             //    if (mdf.IDBlock.Version == 400)
