@@ -218,6 +218,7 @@
                                                    //skiped: Chanel... (not used)        +8
                                                    //skiped: AttachmentBlock (not used)  +8
                                                    //skiped: EventBlock (not used)       +8
+                mdf.UpdatePosition(mdf.position + 8 * 4);
                 ptrTextBlock = mdf.ReadU64();
                 block.StartTimeNs = mdf.ReadU64();
                 block.TimeZoneOffsetMinutes = mdf.Read16();

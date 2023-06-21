@@ -13,6 +13,17 @@
     public class MdfTests
     {
         [Test]
+        public void testRead400()
+        {
+            //Read Some File
+            //var filename = "C:\\Users\\mikhail.iukhnovskii\\AppData\\Local\\Autogramma\\Data\\Projects\\testpro\\ASAP2_Demo_V161_4.00.mf4";
+            //var bytes = File.ReadAllBytes(filename);
+
+            //var mdf = new Mdf(bytes);
+        }
+
+
+        [Test]
         public void BaseWriteReadTest()
         {
             var idBlockByteOrder = ByteOrder.LittleEndian;

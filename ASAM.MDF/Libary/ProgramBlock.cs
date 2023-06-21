@@ -46,10 +46,12 @@
 
         internal static ProgramBlock Read(Mdf mdf, ulong position)
         {
+            mdf.UpdatePosition(position);
+
             var block = new ProgramBlock(mdf);
             block.Read();
 
-            block.Data = mdf.Data.ToList().GetRange((int)position, (int)block.Size).ToArray();
+            block.Data = mdf.Data.ToList().GetRange((int)mdf.position, (int)block.Size).ToArray();
 
             return block;
         }

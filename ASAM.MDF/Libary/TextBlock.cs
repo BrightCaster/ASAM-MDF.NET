@@ -53,10 +53,12 @@
 
         internal static TextBlock Read(Mdf mdf, ulong position)
         {
+            mdf.UpdatePosition(position);
+
             var block = new TextBlock(mdf);
             block.Read();
 
-            block.Text = mdf.IDBlock.Encoding.GetString(mdf.Data, (int)position, (int)block.Size);
+            block.Text = mdf.IDBlock.Encoding.GetString(mdf.Data, (int)mdf.position, (int)block.Size);
 
             return block;
         }
