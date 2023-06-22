@@ -23,8 +23,18 @@
             set { SetStringValue(ref physicalUnit, value, 20); }
         }
         public ConversionType ConversionType { get; set; }
+        public byte Precision { get; private set; }
+        public ushort Flags { get; private set; }
         public ushort SizeInformation { get; private set; }
+        public ushort ValParamCount { get; private set; }
         public ConversionData AdditionalConversionData { get; internal set; }
+        public ulong TextBlockName { get; private set; }
+        public ulong TextBlockUnit { get; private set; }
+
+        private ulong ptrFileComment;
+
+        public ulong InverseConversion { get; private set; }
+        public TextBlock FileComment { get; private set; }
 
         public static ChannelConversionBlock Create(Mdf mdf)
         {
@@ -41,19 +51,38 @@
             var block = new ChannelConversionBlock(mdf);
             block.Read();
 
-            block.PhysicalValueRangeValid = mdf.Read16() != 0;
-            block.MinPhysicalValue = mdf.ReadDouble();
-            block.MaxPhysicalValue = mdf.ReadDouble();
-            block.PhysicalUnit = mdf.IDBlock.Encoding.GetString(mdf.Data, mdf.GetIndexator(20), 20).Humanize();
-            block.ConversionType = (ConversionType)mdf.ReadU16();
-            block.SizeInformation = mdf.ReadU16();
-
+            if (mdf.IDBlock.Version >= 400)
+            {
+                block.TextBlockName = mdf.ReadU64();
+                block.TextBlockUnit= mdf.ReadU64();
+                block.ptrFileComment= mdf.ReadU64();
+                block.InverseConversion= mdf.ReadU64();
+                block.ConversionType= (ConversionType)mdf.ReadByte();
+                block.Precision = mdf.ReadByte();
+                block.Flags = mdf.ReadU16();
+                block.SizeInformation = mdf.ReadU16();
+                block.ValParamCount=mdf.ReadU16();
+                block.MinPhysicalValue = mdf.ReadDouble();
+                block.MaxPhysicalValue = mdf.ReadDouble();  
+            }
+            else
+            {
+                block.PhysicalValueRangeValid = mdf.Read16() != 0;
+                block.MinPhysicalValue = mdf.ReadDouble();
+                block.MaxPhysicalValue = mdf.ReadDouble();
+                block.PhysicalUnit = mdf.IDBlock.Encoding.GetString(mdf.Data, mdf.GetIndexator(20), 20).Humanize();
+                block.ConversionType = (ConversionType)mdf.ReadU16();
+                block.SizeInformation = mdf.ReadU16();
+            }
             if (block.SizeInformation > 0)
             {
                 block.AdditionalConversionData.Data = new byte[ConversionData.GetEstimatedParametersSize(block.ConversionType)];
 
                 Array.Copy(mdf.Data, 42, block.AdditionalConversionData.Data, 0, block.AdditionalConversionData.Data.Length);
             }
+
+            if (block.ptrFileComment != 0)
+                block.FileComment = TextBlock.Read(mdf, block.ptrFileComment);
 
             return block;
         }

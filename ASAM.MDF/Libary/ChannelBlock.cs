@@ -86,13 +86,13 @@
         public uint InvalidBitPos { get; private set; }
         public byte Precision { get; private set; }
         public byte Reserved1 { get; private set; }
-        public uint AttachmentCount { get; private set; }
-        public long ValRangeMin { get; private set; }
-        public long ValRangeMax { get; private set; }
-        public long LimitMin { get; private set; }
-        public long LimitMax { get; private set; }
-        public long LimitMinExt { get; private set; }
-        public long LimitMaxExt { get; private set; }
+        public ushort AttachmentCount { get; private set; }
+        public double ValRangeMin { get; private set; }
+        public double ValRangeMax { get; private set; }
+        public double LimitMin { get; private set; }
+        public double LimitMax { get; private set; }
+        public double LimitMinExt { get; private set; }
+        public double LimitMaxExt { get; private set; }
         public ushort NumberOfBits { get; set; }
         public SignalType SignalType { get; set; }
         public bool ValueRange { get; set; }
@@ -134,13 +134,13 @@
                 block.ptrDataBlockSignal = mdf.ReadU64();
                 block.ptrUnit = mdf.ReadU64();
                 block.ptrTextBlockComment = mdf.ReadU64();
-                block.ptrAttachment = mdf.ReadU64();
-                block.ptrDefaultDGBlock = mdf.ReadU64();
-                block.ptrDefaultCGBlock = mdf.ReadU64();
-                block.ptrDefaultCurrentChanelBlock = mdf.ReadU64();
+                //block.ptrAttachment = mdf.ReadU64();
+                //block.ptrDefaultDGBlock = mdf.ReadU64();
+                //block.ptrDefaultCGBlock = mdf.ReadU64();
+                //block.ptrDefaultCurrentChanelBlock = mdf.ReadU64();
                 block.Type = (ChannelType)mdf.ReadByte();
                 block.ptrSyncType = mdf.ReadByte();
-                block.ptrDataType = mdf.ReadByte();
+                block.SignalType = (SignalType)mdf.ReadByte();
                 block.BitOffset = mdf.ReadByte();
                 block.ByteOffset = mdf.ReadU32();
                 block.BitLength = mdf.ReadU32();
@@ -148,13 +148,13 @@
                 block.InvalidBitPos = mdf.ReadU32();
                 block.Precision = mdf.ReadByte();
                 block.Reserved1 = mdf.ReadByte();
-                block.AttachmentCount = mdf.ReadU32();
-                block.ValRangeMin = mdf.Read64();
-                block.ValRangeMax = mdf.Read64();
-                block.LimitMin = mdf.Read64();
-                block.LimitMax = mdf.Read64();
-                block.LimitMinExt = mdf.Read64();
-                block.LimitMaxExt = mdf.Read64();
+                block.AttachmentCount = mdf.ReadU16();
+                block.ValRangeMin = mdf.ReadDouble();
+                block.ValRangeMax = mdf.ReadDouble();
+                block.LimitMin = mdf.ReadDouble();
+                block.LimitMax = mdf.ReadDouble();
+                block.LimitMinExt = mdf.ReadDouble();
+                block.LimitMaxExt = mdf.ReadDouble();
             }
             else
             {
