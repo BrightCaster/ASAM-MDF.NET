@@ -23,6 +23,7 @@
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
     <PlatformTarget>x64</PlatformTarget>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -32,10 +33,25 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="PresentationFramework" />
     <Reference Include="System" />
+    <Reference Include="System.Buffers, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Buffers.4.5.1\lib\net461\System.Buffers.dll</HintPath>
+    </Reference>
     <Reference Include="System.Core" />
+    <Reference Include="System.Memory, Version=4.0.1.2, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Memory.4.5.5\lib\net461\System.Memory.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Numerics" />
+    <Reference Include="System.Numerics.Vectors, Version=4.1.4.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Numerics.Vectors.4.5.0\lib\net46\System.Numerics.Vectors.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Runtime.CompilerServices.Unsafe, Version=4.0.4.1, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Runtime.CompilerServices.Unsafe.4.5.3\lib\net461\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+    </Reference>
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Data" />
@@ -58,10 +74,12 @@
     <Compile Include="Libary\DataGroupBlock.cs" />
     <Compile Include="Libary\DataGroupCollection.cs" />
     <Compile Include="Libary\DataRecord.cs" />
+    <Compile Include="Libary\DataZippedBlock.cs" />
     <Compile Include="Libary\DimBlockSupplement.cs" />
     <Compile Include="Libary\HeaderBlock.cs" />
     <Compile Include="Libary\IdentificationBlock.cs" />
     <Compile Include="Libary\INext.cs" />
+    <Compile Include="Libary\LibDeflateDLL.cs" />
     <Compile Include="Libary\Mdf.cs" />
     <Compile Include="Libary\MdfVersionAttribute.cs" />
     <Compile Include="Libary\ProgramBlock.cs" />
@@ -72,15 +90,30 @@
     <Compile Include="Libary\StreamReadHelper.cs" />
     <Compile Include="Libary\TextBlock.cs" />
     <Compile Include="Libary\TriggerBlock.cs" />
-    <Compile Include="Libary\Types\ChannelType.cs" />
+    <Compile Include="Libary\Types\ChannelTypeV3.cs" />
+    <Compile Include="Libary\Types\ChannelTypeV4.cs" />
+    <Compile Include="Libary\Types\CompressionType.cs" />
     <Compile Include="Libary\Types\ConversionType.cs" />
     <Compile Include="Libary\Types\DependencyType.cs" />
     <Compile Include="Libary\Types\ExtensionType.cs" />
     <Compile Include="Libary\Types\FloatingPointFormat.cs" />
-    <Compile Include="Libary\Types\SignalType.cs" />
+    <Compile Include="Libary\Types\SignalTypeV3.cs" />
+    <Compile Include="Libary\Types\SignalTypeV4.cs" />
     <Compile Include="Libary\Types\TimeQuality.cs" />
+    <Compile Include="Libary\Types\ZipTypes.cs" />
     <Compile Include="Libary\VectorCanBlockSupplement.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <WCFMetadata Include="Connected Services\" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="libdeflate.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

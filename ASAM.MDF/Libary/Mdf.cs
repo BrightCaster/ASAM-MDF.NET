@@ -72,6 +72,10 @@
 
         internal byte[] ReadBytes(ushort recordSize)
         {
+            var c = 0;
+            if ((int)position + recordSize >= data.Length)
+                c++;
+
             var value = new byte[recordSize];
 
             Array.Copy(data, (int)position, value, 0, value.Length);
@@ -79,6 +83,12 @@
             position += (ulong)value.Length;
 
             return value;
+        }
+        internal string GetNameBlock(ulong position)
+        {
+            var index = position + 2;
+            var name = IDBlock.Encoding.GetString(Data, (int)index, 2);
+            return name;
         }
     }
 }

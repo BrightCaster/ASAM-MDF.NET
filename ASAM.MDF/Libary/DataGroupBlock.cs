@@ -123,6 +123,11 @@
 
         internal DataRecord[] ReadRecords()
         {
+            var indentificator = Mdf.GetNameBlock(ptrDataBlock);
+
+            if (indentificator == "DZ")
+                DataZippedBlock.Read(Mdf, ptrDataBlock);
+
             Mdf.UpdatePosition(ptrDataBlock);
 
             var recordsList = new List<DataRecord>();
@@ -133,9 +138,9 @@
                 {
                     var group = ChannelGroups[i];
 
-                    for (int k = 0; k < group.Channels.Count; k++)
+                    for (int k = 0; k < (int)group.CycleCount; k++)
                     {
-                        var recordData = Mdf.ReadBytes((ushort)group.CycleCount);
+                        var recordData = Mdf.ReadBytes((ushort)group.DataBytes);
 
                         recordsList.Add(new DataRecord(group, recordData));
                     }

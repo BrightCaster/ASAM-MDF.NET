@@ -58,7 +58,7 @@
             var block = new TextBlock(mdf);
             block.Read();
 
-            block.Text = mdf.GetString(block.Size);
+            block.Text = mdf.GetString(block.Size - mdf.position + block.BlockAddress);
 
             return block;
         }

@@ -64,7 +64,8 @@
         public ChannelExtensionBlock SourceDepending { get; private set; }
         public ChannelDependencyBlock Dependency { get; private set; }
         public TextBlock Comment { get; private set; }
-        public ChannelType Type { get; set; }
+        public ChannelTypeV3 TypeV3 { get; set; }
+        public ChannelTypeV4 TypeV4 { get; set; }
 
         private byte ptrSyncType;
         private byte ptrDataType;
@@ -94,7 +95,8 @@
         public double LimitMinExt { get; private set; }
         public double LimitMaxExt { get; private set; }
         public ushort NumberOfBits { get; set; }
-        public SignalType SignalType { get; set; }
+        public SignalTypeV3 SignalTypeV3 { get; set; }
+        public SignalTypeV4 SignalTypeV4 { get; set; }
         public bool ValueRange { get; set; }
         public double MinValue { get; set; }
         public double MaxValue { get; set; }
@@ -138,12 +140,12 @@
                 //block.ptrDefaultDGBlock = mdf.ReadU64();
                 //block.ptrDefaultCGBlock = mdf.ReadU64();
                 //block.ptrDefaultCurrentChanelBlock = mdf.ReadU64();
-                block.Type = (ChannelType)mdf.ReadByte();
+                block.TypeV4 = (ChannelTypeV4)mdf.ReadByte();
                 block.ptrSyncType = mdf.ReadByte();
-                block.SignalType = (SignalType)mdf.ReadByte();
+                block.SignalTypeV4 = (SignalTypeV4)mdf.ReadByte();
                 block.BitOffset = mdf.ReadByte();
                 block.ByteOffset = mdf.ReadU32();
-                block.BitLength = mdf.ReadU32();
+                block.NumberOfBits = (ushort)mdf.ReadU32();
                 block.ChannelFlags = mdf.ReadU32();
                 block.InvalidBitPos = mdf.ReadU32();
                 block.Precision = mdf.ReadByte();
@@ -163,12 +165,12 @@
                 block.ptrChannelExtensionBlock = mdf.ReadU32();
                 block.ptrChannelDependencyBlock = mdf.ReadU32();
                 block.ptrChannelComment = mdf.ReadU32();
-                block.Type = (ChannelType)mdf.ReadU16();
+                block.TypeV3 = (ChannelTypeV3)mdf.ReadU16();
                 block.SignalName = mdf.IDBlock.Encoding.GetString(mdf.Data, mdf.GetIndexator(32), 32).Humanize();
                 block.SignalDescription = mdf.IDBlock.Encoding.GetString(mdf.Data, mdf.GetIndexator(128), 128).Humanize();
                 block.BitOffset = mdf.ReadU16();
                 block.NumberOfBits = mdf.ReadU16();
-                block.SignalType = (SignalType)mdf.ReadU16();
+                block.SignalTypeV3 = (SignalTypeV3)mdf.ReadU16();
                 block.ValueRange = mdf.ReadBoolean();
 
                 if (block.ValueRange)
@@ -236,12 +238,12 @@
         {
             base.Write(array, ref index);
 
-            var bytesChannelType = BitConverter.GetBytes((ushort)Type);
+            var bytesChannelType = BitConverter.GetBytes((ushort)TypeV3);
             var bytesSignalName = Mdf.IDBlock.Encoding.GetBytes(SignalName);
             var bytesSignalDesc = Mdf.IDBlock.Encoding.GetBytes(SignalDescription);
             var bytesBitOffset = BitConverter.GetBytes(BitOffset);
             var bytesNumOfBits = BitConverter.GetBytes(NumberOfBits);
-            var bytesSignalDataType = BitConverter.GetBytes((ushort)SignalType);
+            var bytesSignalDataType = BitConverter.GetBytes((ushort)SignalTypeV3);
             var bytesValueRangeValid = BitConverter.GetBytes(ValueRange);
             var bytesMinValue = BitConverter.GetBytes(MinValue);
             var bytesMaxValue = BitConverter.GetBytes(MaxValue);
