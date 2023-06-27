@@ -58,7 +58,7 @@
                         if (channel.NumberOfBits == 32)
                             value = BitConverter.ToSingle(Data, byteOffset);
                         if (channel.NumberOfBits == 64)
-                            value = (float)BitConverter.ToDouble(Data, byteOffset);
+                            value = BitConverter.ToDouble(Data, byteOffset);
                         break;
 
                     case SignalTypeV4.String:
@@ -127,7 +127,7 @@
             var bytePosition = bit / 8;
             var bitOffset = bit % 8;
 
-            return (array[bytePosition] & (1 << bitOffset)) > 0;
+            return (array[bytePosition] & (1 << bitOffset)) != 0;   
         }
     }
 }

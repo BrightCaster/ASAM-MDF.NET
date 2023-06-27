@@ -140,7 +140,7 @@
 
                     for (int k = 0; k < (int)group.CycleCount; k++)
                     {
-                        var recordData = Mdf.ReadBytes((ushort)group.DataBytes);
+                        var recordData = Mdf.ReadBytes((int)group.DataBytes);
 
                         recordsList.Add(new DataRecord(group, recordData));
                     }

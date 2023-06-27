@@ -3,7 +3,7 @@ namespace ASAM.MDF.Libary.Types
 {
     public enum ConversionType : ushort
     {
-        Linear = 0,
+        Linear = 0, //сделать для 4 версии
         TabularInterpolated,
         Tabular,
         Polynomial,

@@ -70,12 +70,8 @@
             return size;
         }
 
-        internal byte[] ReadBytes(ushort recordSize)
+        internal byte[] ReadBytes(int recordSize)
         {
-            var c = 0;
-            if ((int)position + recordSize >= data.Length)
-                c++;
-
             var value = new byte[recordSize];
 
             Array.Copy(data, (int)position, value, 0, value.Length);

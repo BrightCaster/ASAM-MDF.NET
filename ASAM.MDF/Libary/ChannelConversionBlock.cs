@@ -32,6 +32,7 @@
         public ulong TextBlockUnit { get; private set; }
 
         private ulong ptrFileComment;
+        private int indexPointer;
 
         public ulong InverseConversion { get; private set; }
         public TextBlock FileComment { get; private set; }
@@ -54,16 +55,17 @@
             if (mdf.IDBlock.Version >= 400)
             {
                 block.TextBlockName = mdf.ReadU64();
-                block.TextBlockUnit= mdf.ReadU64();
-                block.ptrFileComment= mdf.ReadU64();
-                block.InverseConversion= mdf.ReadU64();
-                block.ConversionType= (ConversionType)mdf.ReadByte();
+                block.TextBlockUnit = mdf.ReadU64();
+                block.ptrFileComment = mdf.ReadU64();
+                block.InverseConversion = mdf.ReadU64();
+                block.ConversionType = (ConversionType)mdf.ReadByte();
                 block.Precision = mdf.ReadByte();
                 block.Flags = mdf.ReadU16();
                 block.SizeInformation = mdf.ReadU16();
-                block.ValParamCount=mdf.ReadU16();
+                block.ValParamCount = mdf.ReadU16();
+                block.indexPointer = (int)mdf.position;
                 block.MinPhysicalValue = mdf.ReadDouble();
-                block.MaxPhysicalValue = mdf.ReadDouble();  
+                block.MaxPhysicalValue = mdf.ReadDouble();
             }
             else
             {
@@ -74,12 +76,12 @@
                 block.ConversionType = (ConversionType)mdf.ReadU16();
                 block.SizeInformation = mdf.ReadU16();
             }
-            if (block.SizeInformation > 0)
-            {
-                block.AdditionalConversionData.Data = new byte[ConversionData.GetEstimatedParametersSize(block.ConversionType)];
+                if (block.SizeInformation > 0)
+                {
+                    block.AdditionalConversionData.Data = new byte[ConversionData.GetEstimatedParametersSize(block.ConversionType)];
 
-                Array.Copy(mdf.Data, 42, block.AdditionalConversionData.Data, 0, block.AdditionalConversionData.Data.Length);
-            }
+                    Array.Copy(mdf.Data, block.indexPointer, block.AdditionalConversionData.Data, 0, block.AdditionalConversionData.Data.Length);
+                }
 
             if (block.ptrFileComment != 0)
                 block.FileComment = TextBlock.Read(mdf, block.ptrFileComment);

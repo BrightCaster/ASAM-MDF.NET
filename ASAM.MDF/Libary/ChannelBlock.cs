@@ -104,6 +104,7 @@
         public TextBlock LongSignalName { get; private set; }
         public TextBlock DisplayName { get; private set; }
         public ushort AdditionalByteOffset { get; set; }
+        public TextBlock Unit { get; private set; }
 
         public static ChannelBlock Create(Mdf mdf)
         {
@@ -194,6 +195,11 @@
             if (block.TextBlockChanelName != 0)
                 block.LongSignalName = TextBlock.Read(mdf, block.TextBlockChanelName);
 
+            if (block.ptrUnit != 0)
+                block.Unit = TextBlock.Read(mdf, block.ptrUnit);
+
+            if (block.ptrTextBlockComment != 0)
+                block.Comment = TextBlock.Read(mdf, block.ptrTextBlockComment);
 
             if (block.ptrLongSignalName != 0)
                 block.LongSignalName = TextBlock.Read(mdf, block.ptrLongSignalName);
