@@ -17,6 +17,7 @@
         private DataGroupBlock(Mdf mdf) : base(mdf)
         {
             ChannelGroups = new ChannelGroupCollection(mdf, this);
+            DataListColl = new DataListCollection(mdf, this);
         }
 
         public DataGroupBlock Next
@@ -30,6 +31,7 @@
             }
         }
         public ChannelGroupCollection ChannelGroups { get; private set; }
+        public DataListCollection DataListColl { get; private set; }
         public TriggerBlock Trigger { get; set; }
 
         public ushort NumChannelGroups { get; private set; }
@@ -102,6 +104,9 @@
             if (block.ptrFirstChannelGroupBlock != 0)
                 block.ChannelGroups.Read(ChannelGroupBlock.Read(mdf, block.ptrFirstChannelGroupBlock));
 
+            if (block.ptrDataBlock != 0)
+                block.DataListColl.Read(DataList.Read(mdf, block.ptrDataBlock));
+
             /// TODO: Call Trigger Blocks
             //if (m_ptrTriggerBlock != 0)
             //{
@@ -123,6 +128,8 @@
 
         internal DataRecord[] ReadRecords()
         {
+            var recordsList = new List<DataRecord>();
+
             var indentificator = Mdf.GetNameBlock(ptrDataBlock);
 
             if (indentificator == "DZ")
@@ -130,21 +137,25 @@
 
             Mdf.UpdatePosition(ptrDataBlock);
 
-            var recordsList = new List<DataRecord>();
-
             if (Mdf.IDBlock.Version >= 400)
             {
-                for (int i = 0; i < ChannelGroups.Count; i++)
+                //for (int i = 0; i < ChannelGroups.Count; i++)
+                //{
+                //    var group = ChannelGroups[i];
+
+                //    for (int k = 0; k < (int)group.CycleCount; k++)
+                //    {
+                //        var recordData = Mdf.ReadBytes((int)group.DataBytes + (int)group.InvalidBytes);
+
+                //        recordsList.Add(new DataRecord(group, recordData));
+                //    }
+                //}
+                for (int i = 0; i < DataListColl.Count; i++)
                 {
-                    var group = ChannelGroups[i];
-
-                    for (int k = 0; k < (int)group.CycleCount; k++)
-                    {
-                        var recordData = Mdf.ReadBytes((int)group.DataBytes);
-
-                        recordsList.Add(new DataRecord(group, recordData));
-                    }
+                    var datalist = DataListColl[i];
+                    var recordData= Mdf.ReadBytes((int))
                 }
+
             }
             else
             {

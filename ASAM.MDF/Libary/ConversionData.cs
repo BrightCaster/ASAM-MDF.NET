@@ -31,9 +31,30 @@
 
             return 0;
         }
+        public static ushort GetEstimatedParametersCountV4(ConversionType cType)
+        {
+            switch (cType)
+            {
+                case ConversionType.TabularInterpolated:
+                    return 2;
+
+                case ConversionType.Exponential:
+                case ConversionType.Logarithmic:
+                    return 7;
+
+                case ConversionType.Polynomial:
+                    return 6;
+            }
+
+            return 0;
+        }
         public static ushort GetEstimatedParametersSize(ConversionType cType)
         {
             return (ushort)(GetEstimatedParametersCount(cType) * 8);
+        }
+        public static ushort GetEstimatedParametersSizeV4(ConversionType cType)
+        {
+            return (ushort)(GetEstimatedParametersCountV4(cType) * 8);
         }
 
         public double[] GetParameters()
@@ -41,8 +62,13 @@
             if (Parent == null || Data == null)
                 throw new FormatException();
 
-            int estLength = GetEstimatedParametersCount(Parent.ConversionType);
-            
+            int estLength = 0;
+            if (Parent.Mdf.IDBlock.Version >= 400)
+                estLength = Parent.ValParamCount;
+            else
+                estLength = GetEstimatedParametersCount(Parent.ConversionType);
+
+
             if (Data.Length != estLength * 8)
                 throw new FormatException();
 
@@ -58,35 +84,69 @@
                 return intValue;
 
             var p = GetParameters();
-
-            switch (Parent.ConversionType)
+            if (Parent.Mdf.IDBlock.Version >= 400)
             {
-                case ConversionType.Linear:
-                    return intValue * p[1] + p[0];
+                switch (Parent.ConversionType)
+                {
+                    case ConversionType.TabularInterpolated:
+                        return intValue * p[1] + p[0];
 
-                case ConversionType.Exponential:
-                    if (p[3] == 0)
-                        return Math.Log10(((intValue - p[6]) * p[5] - p[2]) / p[0]) / p[1];
+                    case ConversionType.Exponential:
+                        if (p[3] == 0)
+                            return Math.Log10(((intValue - p[6]) * p[5] - p[2]) / p[0]) / p[1];
 
-                    if (p[0] == 0)
-                        return Math.Log10((p[2] / (intValue - p[6]) - p[5]) / p[3]) / p[4];
+                        if (p[0] == 0)
+                            return Math.Log10((p[2] / (intValue - p[6]) - p[5]) / p[3]) / p[4];
 
-                    throw new NotSupportedException();
+                        throw new NotSupportedException();
 
-                case ConversionType.Logarithmic:
-                    if (p[3] == 0)
-                        return Math.Exp(((intValue - p[6]) * p[5] - p[2]) / p[0]) / p[1];
+                    case ConversionType.Logarithmic:
+                        if (p[3] == 0)
+                            return Math.Exp(((intValue - p[6]) * p[5] - p[2]) / p[0]) / p[1];
 
-                    if (p[0] == 0)
-                        return Math.Exp((p[2] / (intValue - p[6]) - p[5]) / p[3]) / p[4];
+                        if (p[0] == 0)
+                            return Math.Exp((p[2] / (intValue - p[6]) - p[5]) / p[3]) / p[4];
 
-                    throw new NotSupportedException();
+                        throw new NotSupportedException();
 
-                case ConversionType.RationalConversion:
-                    return (p[0] * intValue * intValue + p[1] * intValue + p[2]) / (p[3] * intValue * intValue + p[4] * intValue + p[5]);
+                    case ConversionType.Polynomial:
+                        return (p[0] * intValue * intValue + p[1] * intValue + p[2]) / (p[3] * intValue * intValue + p[4] * intValue + p[5]);
 
-                default:
-                    throw new NotSupportedException("Conversion type '" + Parent.ConversionType + "' is not supported yet");
+                    default:
+                        throw new NotSupportedException("Conversion type '" + Parent.ConversionType + "' is not supported yet");
+                }
+            }
+            else
+            {
+                switch (Parent.ConversionType)
+                {
+                    case ConversionType.Linear:
+                        return intValue * p[1] + p[0];
+
+                    case ConversionType.Exponential:
+                        if (p[3] == 0)
+                            return Math.Log10(((intValue - p[6]) * p[5] - p[2]) / p[0]) / p[1];
+
+                        if (p[0] == 0)
+                            return Math.Log10((p[2] / (intValue - p[6]) - p[5]) / p[3]) / p[4];
+
+                        throw new NotSupportedException();
+
+                    case ConversionType.Logarithmic:
+                        if (p[3] == 0)
+                            return Math.Exp(((intValue - p[6]) * p[5] - p[2]) / p[0]) / p[1];
+
+                        if (p[0] == 0)
+                            return Math.Exp((p[2] / (intValue - p[6]) - p[5]) / p[3]) / p[4];
+
+                        throw new NotSupportedException();
+
+                    case ConversionType.RationalConversion:
+                        return (p[0] * intValue * intValue + p[1] * intValue + p[2]) / (p[3] * intValue * intValue + p[4] * intValue + p[5]);
+
+                    default:
+                        throw new NotSupportedException("Conversion type '" + Parent.ConversionType + "' is not supported yet");
+                }
             }
         }
         public void SetParameters(params double[] parameters)

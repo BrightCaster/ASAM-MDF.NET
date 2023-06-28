@@ -54,9 +54,6 @@
         {
             get
             {
-                if (channelConversion == null && ptrChannelConversionBlock != 0)
-                    channelConversion = ChannelConversionBlock.Read(Mdf, ptrChannelConversionBlock);
-
                 return channelConversion;
             }
             set { channelConversion = value; }
@@ -203,6 +200,9 @@
 
             if (block.ptrLongSignalName != 0)
                 block.LongSignalName = TextBlock.Read(mdf, block.ptrLongSignalName);
+
+            if (block.channelConversion == null && block.ptrChannelConversionBlock != 0)
+                block.ChannelConversion = ChannelConversionBlock.Read(block.Mdf, block.ptrChannelConversionBlock);
             //if (block.ptrChannelExtensionBlock != 0)
             //{
             //    if (mdf.IDBlock.Version == 400)

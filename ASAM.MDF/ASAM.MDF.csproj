@@ -71,8 +71,11 @@
     <Compile Include="Libary\ChannelGroupCollection.cs" />
     <Compile Include="Libary\Common.cs" />
     <Compile Include="Libary\ConversionData.cs" />
+    <Compile Include="Libary\DataBlock.cs" />
     <Compile Include="Libary\DataGroupBlock.cs" />
     <Compile Include="Libary\DataGroupCollection.cs" />
+    <Compile Include="Libary\DataList.cs" />
+    <Compile Include="Libary\DataListCollection.cs" />
     <Compile Include="Libary\DataRecord.cs" />
     <Compile Include="Libary\DataZippedBlock.cs" />
     <Compile Include="Libary\DimBlockSupplement.cs" />
@@ -97,6 +100,7 @@
     <Compile Include="Libary\Types\DependencyType.cs" />
     <Compile Include="Libary\Types\ExtensionType.cs" />
     <Compile Include="Libary\Types\FloatingPointFormat.cs" />
+    <Compile Include="Libary\Types\ListFlags.cs" />
     <Compile Include="Libary\Types\SignalTypeV3.cs" />
     <Compile Include="Libary\Types\SignalTypeV4.cs" />
     <Compile Include="Libary\Types\TimeQuality.cs" />
