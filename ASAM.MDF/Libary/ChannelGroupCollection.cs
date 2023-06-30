@@ -99,5 +99,9 @@
         {
             throw new NotImplementedException();
         }
+        public ChannelGroupBlock Find(Predicate<ChannelGroupBlock> predicate)
+        {
+            return items.Find(predicate);
+        }
     }
 }

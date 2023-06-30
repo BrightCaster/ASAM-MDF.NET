@@ -54,6 +54,7 @@
         }
 
         public TextBlock FileComment { get; private set; }
+        internal DataZippedBlock DataZipped { get; private set; }
 
         //public uint Reserved { get; set; }
 
@@ -105,8 +106,17 @@
                 block.ChannelGroups.Read(ChannelGroupBlock.Read(mdf, block.ptrFirstChannelGroupBlock));
 
             if (block.ptrDataBlock != 0)
-                block.DataListColl.Read(DataList.Read(mdf, block.ptrDataBlock));
+            {
+                var indentificator = mdf.GetNameBlock(block.ptrDataBlock);
 
+                if (indentificator == "DZ")
+                    block.DataZipped = DataZippedBlock.Read(mdf, block.ptrDataBlock);
+
+                if (indentificator == "DL")
+                {
+                    block.DataListColl.Read(DataList.Read(mdf, block.ptrDataBlock));
+                }
+            }
             /// TODO: Call Trigger Blocks
             //if (m_ptrTriggerBlock != 0)
             //{
@@ -129,32 +139,52 @@
         internal DataRecord[] ReadRecords()
         {
             var recordsList = new List<DataRecord>();
+            var dataList = new List<DataBlock>();
 
             var indentificator = Mdf.GetNameBlock(ptrDataBlock);
 
-            if (indentificator == "DZ")
-                DataZippedBlock.Read(Mdf, ptrDataBlock);
+            if (indentificator == "DL")
+            {
+                for (int i = 0; i < DataListColl.Count; i++)
+                {
+                    dataList.Add(DataListColl[i].DataBlock);
+                }
+            }
 
             Mdf.UpdatePosition(ptrDataBlock);
 
             if (Mdf.IDBlock.Version >= 400)
             {
-                //for (int i = 0; i < ChannelGroups.Count; i++)
-                //{
-                //    var group = ChannelGroups[i];
-
-                //    for (int k = 0; k < (int)group.CycleCount; k++)
-                //    {
-                //        var recordData = Mdf.ReadBytes((int)group.DataBytes + (int)group.InvalidBytes);
-
-                //        recordsList.Add(new DataRecord(group, recordData));
-                //    }
-                //}
-                for (int i = 0; i < DataListColl.Count; i++)
+                if (dataList.Count != 0)
+                for (int j = 0; j < dataList.Count; j++)
                 {
-                    var datalist = DataListColl[i];
-                    var recordData= Mdf.ReadBytes((int))
+                    var data = dataList[j];
+                    var position = 0;
+
+                    for (int i = 0; i < ChannelGroups.Count; i++)
+                    {
+                        var group = ChannelGroups[i];
+
+                        for (int k = 0; k < (int)group.CycleCount; k++)
+                        {
+                            var recordData = Mdf.ReadBytes(data.DataOfBlock,(int)group.DataBytes + (int)group.InvalidBytes, ref position);
+
+                            recordsList.Add(new DataRecord(group, recordData));
+                        }
+                    }
                 }
+                else
+                    for (int i = 0; i < ChannelGroups.Count; i++)
+                    {
+                        var group = ChannelGroups[i];
+
+                        for (int k = 0; k < (int)group.CycleCount; k++)
+                        {
+                            var recordData = Mdf.ReadBytes((int)group.DataBytes);
+
+                            recordsList.Add(new DataRecord(group, recordData));
+                        }
+                    }
 
             }
             else

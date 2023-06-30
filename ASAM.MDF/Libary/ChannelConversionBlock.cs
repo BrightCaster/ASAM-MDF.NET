@@ -1,6 +1,7 @@
 ﻿namespace ASAM.MDF.Libary
 {
     using System;
+    using System.Collections.Generic;
     using System.IO;
 
     using ASAM.MDF.Libary.Types;
@@ -23,6 +24,7 @@
             set { SetStringValue(ref physicalUnit, value, 20); }
         }
         public ConversionType ConversionType { get; set; }
+        public ConversionType4 ConversionType4 { get; private set; }
         public byte Precision { get; private set; }
         public ushort Flags { get; private set; }
         public ushort SizeInformation { get; private set; }
@@ -38,6 +40,8 @@
         public TextBlock FileComment { get; private set; }
         public TextBlock ConversionUnit { get; private set; }
         public TextBlock ConversionName { get; private set; }
+        public List<TextBlock> ConvTabT { get; internal set; }
+        public List<double> ConvTabTValue { get; internal set; }
 
         public static ChannelConversionBlock Create(Mdf mdf)
         {
@@ -61,17 +65,25 @@
                 block.TextBlockUnit = mdf.ReadU64();
                 block.ptrFileComment = mdf.ReadU64();
                 block.InverseConversion = mdf.ReadU64();
-                
-                if (block.LinksCount > 4)
-                    mdf.UpdatePosition((block.LinksCount - 4) * 8);
+                var lastPosAddress = mdf.position;
 
-                block.ConversionType = (ConversionType)mdf.ReadByte();
+                if (block.LinksCount > 4)
+                    mdf.UpdatePosition(lastPosAddress + (block.LinksCount - 4) * 8);
+
+                block.ConversionType4 = (ConversionType4)mdf.ReadByte();
+                
                 block.Precision = mdf.ReadByte();
                 block.Flags = mdf.ReadU16();
                 block.SizeInformation = mdf.ReadU16();
+
+                ConversionProp.GetProp(block, mdf, lastPosAddress, mdf.position);
+
                 block.ValParamCount = mdf.ReadU16();
                 block.MinPhysicalValue = mdf.ReadDouble();
                 block.MaxPhysicalValue = mdf.ReadDouble();
+
+                ConversionProp.GetValues(block, mdf);
+                
                 block.indexPointer = (int)mdf.position;
 
                 block.AdditionalConversionData.Data = new byte[block.ValParamCount * 8];

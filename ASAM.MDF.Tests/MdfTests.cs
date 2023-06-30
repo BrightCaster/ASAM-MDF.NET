@@ -1,6 +1,7 @@
 ﻿namespace ASAM.MDF.Tests
 {
     using System;
+    using System.Collections.Generic;
     using System.IO;
     using System.Text;
 
@@ -16,11 +17,14 @@
         public void testRead400()
         {
             //Read Some File
-            var filename = "C:\\Users\\mikhail.iukhnovskii\\AppData\\Local\\Autogramma\\Data\\Projects\\testpro\\ASAP2_Demo_V161_4.00.mf4";
+            //var filename = "C:\\Users\\mikhail.iukhnovskii\\AppData\\Local\\Autogramma\\Data\\Projects\\testpro\\ASAP2_Demo_V161_4.00.mf4";
+            var filename = "C:\\Users\\mishka\\AppData\\Local\\Autogramma\\Data\\Projects\\testpro\\ErrorEBS_111.mdf";
             var bytes = File.ReadAllBytes(filename);
 
             var mdf = new Mdf(bytes);
-            mdf.HDBlock.Author = "";
+            var channelNames = "RetarderType_29";
+
+            ExampleAutogramma.Start(mdf, channelNames);
         }
 
 
@@ -293,4 +297,5 @@
             }
         }
     }
+
 }

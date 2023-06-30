@@ -1,7 +1,7 @@
 ﻿namespace ASAM.MDF.Libary
 {
     using System;
-
+    using System.Linq;
     using ASAM.MDF.Libary.Types;
 
     public class ConversionData
@@ -52,10 +52,6 @@
         {
             return (ushort)(GetEstimatedParametersCount(cType) * 8);
         }
-        public static ushort GetEstimatedParametersSizeV4(ConversionType cType)
-        {
-            return (ushort)(GetEstimatedParametersCountV4(cType) * 8);
-        }
 
         public double[] GetParameters()
         {
@@ -86,34 +82,21 @@
             var p = GetParameters();
             if (Parent.Mdf.IDBlock.Version >= 400)
             {
-                switch (Parent.ConversionType)
+                switch (Parent.ConversionType4)
                 {
-                    case ConversionType.TabularInterpolated:
+                    case ConversionType4.None: 
+                        return intValue;
+                    case ConversionType4.Linear:
                         return intValue * p[1] + p[0];
 
-                    case ConversionType.Exponential:
-                        if (p[3] == 0)
-                            return Math.Log10(((intValue - p[6]) * p[5] - p[2]) / p[0]) / p[1];
-
-                        if (p[0] == 0)
-                            return Math.Log10((p[2] / (intValue - p[6]) - p[5]) / p[3]) / p[4];
-
-                        throw new NotSupportedException();
-
-                    case ConversionType.Logarithmic:
-                        if (p[3] == 0)
-                            return Math.Exp(((intValue - p[6]) * p[5] - p[2]) / p[0]) / p[1];
-
-                        if (p[0] == 0)
-                            return Math.Exp((p[2] / (intValue - p[6]) - p[5]) / p[3]) / p[4];
-
-                        throw new NotSupportedException();
-
-                    case ConversionType.Polynomial:
+                    case ConversionType4.Rational:
                         return (p[0] * intValue * intValue + p[1] * intValue + p[2]) / (p[3] * intValue * intValue + p[4] * intValue + p[5]);
 
+                    case ConversionType4.TabularToText:
+                        return intValue;
+
                     default:
-                        throw new NotSupportedException("Conversion type '" + Parent.ConversionType + "' is not supported yet");
+                        throw new NotSupportedException("Conversion type '" + Parent.ConversionType4 + "' is not supported yet");
                 }
             }
             else

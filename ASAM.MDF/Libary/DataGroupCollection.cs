@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Runtime.InteropServices.WindowsRuntime;
 
     public class DataGroupCollection : IList<DataGroupBlock>
     {
@@ -115,6 +116,10 @@
         System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
         {
             throw new NotImplementedException();
+        }
+        public DataGroupBlock Find(Predicate<DataGroupBlock> predicate)
+        {
+            return items.Find(predicate);
         }
     }
 }

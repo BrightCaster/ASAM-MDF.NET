@@ -80,6 +80,16 @@
 
             return value;
         }
+        internal byte[] ReadBytes(byte[] data, int recordSize, ref int position)
+        {
+            var value = new byte[recordSize];
+
+            Array.Copy(data, position, value, 0, value.Length);
+
+            position += value.Length;
+
+            return value;
+        }
         internal string GetNameBlock(ulong position)
         {
             var index = position + 2;
