@@ -2,7 +2,6 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Runtime.InteropServices.WindowsRuntime;
 
     public class DataGroupCollection : IList<DataGroupBlock>
     {
