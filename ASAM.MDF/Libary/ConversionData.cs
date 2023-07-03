@@ -31,23 +31,6 @@
 
             return 0;
         }
-        public static ushort GetEstimatedParametersCountV4(ConversionType cType)
-        {
-            switch (cType)
-            {
-                case ConversionType.TabularInterpolated:
-                    return 2;
-
-                case ConversionType.Exponential:
-                case ConversionType.Logarithmic:
-                    return 7;
-
-                case ConversionType.Polynomial:
-                    return 6;
-            }
-
-            return 0;
-        }
         public static ushort GetEstimatedParametersSize(ConversionType cType)
         {
             return (ushort)(GetEstimatedParametersCount(cType) * 8);
@@ -86,14 +69,12 @@
                 {
                     case ConversionType4.None: 
                         return intValue;
+
                     case ConversionType4.Linear:
                         return intValue * p[1] + p[0];
 
                     case ConversionType4.Rational:
                         return (p[0] * intValue * intValue + p[1] * intValue + p[2]) / (p[3] * intValue * intValue + p[4] * intValue + p[5]);
-
-                    case ConversionType4.TabularToText:
-                        return intValue;
 
                     default:
                         throw new NotSupportedException("Conversion type '" + Parent.ConversionType4 + "' is not supported yet");

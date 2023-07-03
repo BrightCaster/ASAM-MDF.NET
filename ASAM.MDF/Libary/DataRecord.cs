@@ -1,9 +1,7 @@
 ﻿namespace ASAM.MDF.Libary
 {
     using System;
-    using System.Collections;
 
-    using ASAM.MDF.Libary;
     using ASAM.MDF.Libary.Types;
 
     public struct DataRecord
@@ -22,7 +20,7 @@
             if (ChannelGroup.Channels.Contains(channel) == false)
                 throw new ArgumentException("channel");
 
-            var byteOffset = channel.ByteOffset != 0 ? (int)channel.ByteOffset + channel.BitOffset / 8 : channel.BitOffset / 8; //
+            var byteOffset = channel.AdditionalByteOffset != 0 ? (int)channel.AdditionalByteOffset + channel.BitOffset / 8 : channel.BitOffset / 8;
             var value = (object)null;
 
             // TODO: BigEndian byte order not supported yet.
@@ -34,7 +32,7 @@
                         {
                             var result = 0u;
                             for (int i = 0; i < channel.NumberOfBits; i++)
-                                result |= (uint)((GetBit(Data, channel.BitOffset + (int)channel.ByteOffset * 8 + i) ? 1 : 0) << i);
+                                result |= (uint)((GetBit(Data, channel.BitOffset + (int)channel.AdditionalByteOffset * 8 + i) ? 1 : 0) << i);
 
                             value = result;
                             break;
@@ -44,7 +42,7 @@
                         {
                             var result = 0;
                             for (int i = 0; i < channel.NumberOfBits; i++)
-                                result |= (GetBit(Data, channel.BitOffset + (int)channel.ByteOffset * 8 + i ) ? 1 : 0) << i;
+                                result |= (GetBit(Data, channel.BitOffset + (int)channel.AdditionalByteOffset * 8 + i ) ? 1 : 0) << i;
 
                             var maxValue = Math.Pow(2, channel.NumberOfBits) / 2;
                             if (result > maxValue)

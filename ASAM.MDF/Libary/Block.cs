@@ -1,9 +1,6 @@
 ﻿namespace ASAM.MDF.Libary
 {
     using System;
-    using System.IO;
-    using System.Net.Cache;
-    using System.Security.Cryptography;
     using System.Text;
 
     /// <summary>
@@ -20,10 +17,13 @@
         }
 
         public Mdf Mdf { get; private set; }
+        [MdfVersion(400,0)]
         public ushort IdHash { get; private set; }
         public string Identifier { get; protected set; }
+        [MdfVersion(400, 0)]
         public uint Reserved { get; set; }
         public ulong Size { get; private set; }
+        [MdfVersion(400, 0)]
         public ulong LinksCount { get; private set; }
         public ulong BlockAddress { get; private set; }
 
@@ -38,20 +38,13 @@
         internal void Read()
         {
             BlockAddress = Mdf.position;
-
-            if (Mdf.IDBlock.Version >= 400)
-                IdHash = Mdf.ReadU16();
-
-            Identifier = Mdf.GetString(2); // blockaddress = 0
-
             if (Mdf.IDBlock.Version >= 400)
             {
-                Reserved = Mdf.ReadU32();
-                Size = Mdf.ReadU64();
-                LinksCount = Mdf.ReadU64();
+                ReadV4();
+                return;
             }
-            else
-                Size = Mdf.ReadU16();
+            Identifier = Mdf.GetString(2); // blockaddress = 0
+            Size = Mdf.ReadU16();
 
             if (Size <= 4)
                 throw new FormatException();
@@ -95,6 +88,14 @@
                 throw new ArgumentNullException("type");
 
             return (MdfVersionAttribute)Attribute.GetCustomAttribute(type.GetProperty(property), typeof(MdfVersionAttribute));
+        }
+        private void ReadV4()
+        {
+            IdHash = Mdf.ReadU16();
+            Identifier = Mdf.GetString(2); // blockaddress = 0
+            Reserved = Mdf.ReadU32();
+            Size = Mdf.ReadU64();
+            LinksCount = Mdf.ReadU64();
         }
     }
 }

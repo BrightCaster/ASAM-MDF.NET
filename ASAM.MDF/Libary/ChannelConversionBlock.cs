@@ -71,19 +71,13 @@
                     mdf.UpdatePosition(lastPosAddress + (block.LinksCount - 4) * 8);
 
                 block.ConversionType4 = (ConversionType4)mdf.ReadByte();
-                
                 block.Precision = mdf.ReadByte();
                 block.Flags = mdf.ReadU16();
                 block.SizeInformation = mdf.ReadU16();
-
-                ConversionProp.GetProp(block, mdf, lastPosAddress, mdf.position);
-
                 block.ValParamCount = mdf.ReadU16();
                 block.MinPhysicalValue = mdf.ReadDouble();
                 block.MaxPhysicalValue = mdf.ReadDouble();
 
-                ConversionProp.GetValues(block, mdf);
-                
                 block.indexPointer = (int)mdf.position;
 
                 block.AdditionalConversionData.Data = new byte[block.ValParamCount * 8];
@@ -95,7 +89,7 @@
                 block.PhysicalValueRangeValid = mdf.Read16() != 0;
                 block.MinPhysicalValue = mdf.ReadDouble();
                 block.MaxPhysicalValue = mdf.ReadDouble();
-                block.PhysicalUnit = mdf.IDBlock.Encoding.GetString(mdf.Data, mdf.GetIndexator(20), 20).Humanize();
+                block.PhysicalUnit = mdf.GetString(20);
                 block.ConversionType = (ConversionType)mdf.ReadU16();
                 block.SizeInformation = mdf.ReadU16();
 
