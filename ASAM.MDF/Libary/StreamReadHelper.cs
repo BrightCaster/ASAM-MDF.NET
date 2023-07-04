@@ -94,7 +94,7 @@ namespace ASAM.MDF.Libary
         {
             mdf.position = address;
         }
-        public static int GetIndexator(this Mdf mdf, ulong count)
+        public static int AdvanceIndex(this Mdf mdf, ulong count)
         {
             var index = mdf.position;
 
@@ -105,7 +105,7 @@ namespace ASAM.MDF.Libary
 
         public static string GetString(this Mdf mdf, ulong count)
         {
-            var value = mdf.IDBlock.Encoding.GetString(mdf.Data, mdf.GetIndexator(count), (int)count);
+            var value = mdf.IDBlock.Encoding.GetString(mdf.Data, mdf.AdvanceIndex(count), (int)count);
             var indexLastSymbol = value.IndexOf('\0');
             if (indexLastSymbol != -1)
                 value = value.Remove(indexLastSymbol);

@@ -167,15 +167,15 @@
             var block = new IdentificationBlock();
 
             block.Mdf = mdf;
-            block.fileIdentifier = Encoding.UTF8.GetString(mdf.Data, mdf.GetIndexator(8), 8).Humanize();
-            block.formatIdentifier = Encoding.UTF8.GetString(mdf.Data, mdf.GetIndexator(8), 8).Humanize();
-            block.programIdentifier = Encoding.UTF8.GetString(mdf.Data, mdf.GetIndexator(8), 8).Humanize();
+            block.fileIdentifier = GetString(mdf, 8).Humanize();
+            block.formatIdentifier = GetString(mdf, 8).Humanize();
+            block.programIdentifier = GetString(mdf, 8).Humanize();
             block.ByteOrder = (ByteOrder)mdf.ReadU16();
             block.FloatingPointFormat = (FloatingPointFormat)mdf.ReadU16();
             block.Version = mdf.ReadU16();
             block.CodePage = mdf.ReadU16();
-            block.reserved1 = Encoding.UTF8.GetString(mdf.Data, mdf.GetIndexator(2), 2).Humanize();
-            block.reserved2 = Encoding.UTF8.GetString(mdf.Data, mdf.GetIndexator(30), 30).Humanize();
+            block.reserved1 = GetString(mdf, 2).Humanize();
+            block.reserved2 = GetString(mdf, 30).Humanize();
 
             return block;
         }
@@ -231,6 +231,10 @@
 
                 target = value;
             }
+        }
+        private static string GetString(Mdf mdf, ulong count)
+        {
+            return Encoding.UTF8.GetString(mdf.Data, mdf.AdvanceIndex(count), (int)count);
         }
     }
 }

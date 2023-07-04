@@ -1,7 +1,4 @@
-﻿using System.Runtime.InteropServices;
-using System.Windows.Controls;
-
-namespace ASAM.MDF.Libary
+﻿namespace ASAM.MDF.Libary
 {
     public class DataList : Block, INext<DataList>
     {

@@ -51,7 +51,7 @@
             var block = new ProgramBlock(mdf);
             block.Read();
 
-            block.Data = mdf.Data.ToList().GetRange((int)mdf.position, (int)block.Size).ToArray();
+            Array.Copy(mdf.Data, (int)mdf.position, block.Data, 0, (int)block.Size);
 
             return block;
         }
