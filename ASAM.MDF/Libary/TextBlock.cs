@@ -51,18 +51,14 @@
             return "{TXBLOCK: " + Text + "}";
         }
 
-        internal static TextBlock Read(Mdf mdf, Stream stream)
+        internal static TextBlock Read(Mdf mdf, ulong position)
         {
+            mdf.UpdatePosition(position);
+
             var block = new TextBlock(mdf);
-            block.Read(stream);
+            block.Read();
 
-            var data = new byte[block.Size - 4];
-            var read = stream.Read(data, 0, data.Length);
-
-            if (read != data.Length)
-                throw new FormatException();
-
-            block.text = mdf.IDBlock.Encoding.GetString(data, 0, data.Length);
+            block.Text = mdf.GetString(block.Size - mdf.position + block.BlockAddress);
 
             return block;
         }

@@ -12,19 +12,29 @@
         private const int MIN_VERSION_DISPLAY_NAME = 300;
         private const int MIN_VERSION_ADDITIONAL_BYTE_OFFSET = 300;
 
-        private uint ptrNextChannelBlock;
-        private uint ptrChannelConversionBlock;
-        private uint ptrChannelExtensionBlock;
-        private uint ptrChannelDependencyBlock;
-        private uint ptrChannelComment;
-        private uint ptrLongSignalName;
-        private uint ptrDisplayName;
+        private ulong ptrNextChannelBlock;
+
+        public ulong ConponentAddress { get; private set; }
+        public ulong TextBlockChanelName { get; private set; }
+
+        private ulong ptrChannelConversionBlock;
+        private ulong ptrDataBlockSignal;
+        private ulong ptrUnit;
+        private ulong ptrTextBlockComment;
+        private ulong ptrAttachment;
+        private ulong ptrDefaultDGBlock;
+        private ulong ptrDefaultCGBlock;
+        private ulong ptrDefaultCurrentChanelBlock;
+        private ulong ptrChannelExtensionBlock;
+        private ulong ptrChannelDependencyBlock;
+        private ulong ptrChannelComment;
+        private ulong ptrLongSignalName;
+        private ulong ptrDisplayName;
         private string signalName;
         private string signalDescription;
 
         private ChannelConversionBlock channelConversion;
         private ChannelBlock next;
-        private Stream stream;
 
         private ChannelBlock(Mdf mdf) : base(mdf)
         {
@@ -35,7 +45,7 @@
             get
             {
                 if (next == null && ptrNextChannelBlock != 0)
-                    next = Read(Mdf, stream, ptrNextChannelBlock);
+                    next = Read(Mdf, ptrNextChannelBlock);
 
                 return next;
             }
@@ -44,9 +54,6 @@
         {
             get
             {
-                if (channelConversion == null && ptrChannelConversionBlock != 0)
-                    channelConversion = ChannelConversionBlock.Read(Mdf, stream, ptrChannelConversionBlock);
-
                 return channelConversion;
             }
             set { channelConversion = value; }
@@ -54,7 +61,12 @@
         public ChannelExtensionBlock SourceDepending { get; private set; }
         public ChannelDependencyBlock Dependency { get; private set; }
         public TextBlock Comment { get; private set; }
-        public ChannelType Type { get; set; }
+        public ChannelTypeV3 TypeV3 { get; set; }
+        public ChannelTypeV4 TypeV4 { get; set; }
+
+        private byte ptrSyncType;
+        private byte ptrDataType;
+
         public string SignalName
         {
             get { return signalName; }
@@ -66,15 +78,29 @@
             set { SetStringValue(ref signalDescription, value, 128); }
         }
         public ushort BitOffset { get; set; }
+        public uint BitLength { get; private set; }
+        public uint ChannelFlags { get; private set; }
+        public uint InvalidBitPos { get; private set; }
+        public byte Precision { get; private set; }
+        public byte Reserved1 { get; private set; }
+        public ushort AttachmentCount { get; private set; }
+        public double ValRangeMin { get; private set; }
+        public double ValRangeMax { get; private set; }
+        public double LimitMin { get; private set; }
+        public double LimitMax { get; private set; }
+        public double LimitMinExt { get; private set; }
+        public double LimitMaxExt { get; private set; }
         public ushort NumberOfBits { get; set; }
-        public SignalType SignalType { get; set; }
+        public SignalTypeV3 SignalTypeV3 { get; set; }
+        public SignalTypeV4 SignalTypeV4 { get; set; }
         public bool ValueRange { get; set; }
         public double MinValue { get; set; }
         public double MaxValue { get; set; }
         public double SampleRate { get; set; }
         public TextBlock LongSignalName { get; private set; }
         public TextBlock DisplayName { get; private set; }
-        public ushort AdditionalByteOffset { get; set; }
+        public uint AdditionalByteOffset { get; set; }
+        public TextBlock Unit { get; private set; }
 
         public static ChannelBlock Create(Mdf mdf)
         {
@@ -85,62 +111,123 @@
                 SignalDescription = "",
             };
         }
-        public static ChannelBlock Read(Mdf mdf, Stream stream, uint position)
+        public static ChannelBlock Read(Mdf mdf, ulong position)
         {
-            stream.Position = position;
+            mdf.UpdatePosition(position);
 
             var block = new ChannelBlock(mdf);
-            block.stream = stream;
-            block.Read(stream);
-
-            var data = new byte[block.Size - 4];
-            var read = stream.Read(data, 0, data.Length);
-
-            if (read != data.Length)
-                throw new FormatException();
+            block.Read();
 
             block.next = null;
             block.SourceDepending = null;
             block.Dependency = null;
             block.Comment = null;
 
-            block.ptrNextChannelBlock = BitConverter.ToUInt32(data, 0);
-            block.ptrChannelConversionBlock = BitConverter.ToUInt32(data, 4);
-            block.ptrChannelExtensionBlock = BitConverter.ToUInt32(data, 8);
-            block.ptrChannelDependencyBlock = BitConverter.ToUInt32(data, 12);
-            block.ptrChannelComment = BitConverter.ToUInt32(data, 16);
-            block.Type = (ChannelType)BitConverter.ToUInt16(data, 20);
-            block.SignalName = mdf.IDBlock.Encoding.GetString(data, 22, 32).Humanize();
-            block.SignalDescription = mdf.IDBlock.Encoding.GetString(data, 54, 128).Humanize();
-            block.BitOffset = BitConverter.ToUInt16(data, 182);
-            block.NumberOfBits = BitConverter.ToUInt16(data, 184);
-            block.SignalType = (SignalType)BitConverter.ToUInt16(data, 186);
-            block.ValueRange = BitConverter.ToBoolean(data, 188);
+            if (mdf.IDBlock.Version >= 400)
+            {
+                ReadV4(mdf, block);
+                return block;
+            }
+            block.ptrNextChannelBlock = mdf.ReadU32();
+            block.ptrChannelConversionBlock = mdf.ReadU32();
+            block.ptrChannelExtensionBlock = mdf.ReadU32();
+            block.ptrChannelDependencyBlock = mdf.ReadU32();
+            block.ptrChannelComment = mdf.ReadU32();
+            block.TypeV3 = (ChannelTypeV3)mdf.ReadU16();
+            block.SignalName = mdf.GetString(32);
+            block.SignalDescription = mdf.GetString(128);
+            block.BitOffset = mdf.ReadU16();
+            block.NumberOfBits = mdf.ReadU16();
+            block.SignalTypeV3 = (SignalTypeV3)mdf.ReadU16();
+            block.ValueRange = mdf.ReadBoolean();
 
             if (block.ValueRange)
             {
-                block.MinValue = BitConverter.ToDouble(data, 190);
-                block.MaxValue = BitConverter.ToDouble(data, 198);
+                block.MinValue = mdf.ReadDouble();
+                block.MaxValue = mdf.ReadDouble();
             }
 
-            block.SampleRate = BitConverter.ToDouble(data, 206);
+            block.SampleRate = mdf.ReadDouble();
 
             if (mdf.IDBlock.Version >= MIN_VERSION_LONG_SIGNAL_NAME)
-                block.ptrLongSignalName = BitConverter.ToUInt32(data, 214);
+                block.ptrLongSignalName = mdf.ReadU32();
 
             if (mdf.IDBlock.Version >= MIN_VERSION_DISPLAY_NAME)
-                block.ptrDisplayName = BitConverter.ToUInt32(data, 218);
+                block.ptrDisplayName = mdf.ReadU32();
 
             if (mdf.IDBlock.Version >= MIN_VERSION_ADDITIONAL_BYTE_OFFSET)
-                block.AdditionalByteOffset = BitConverter.ToUInt16(data, 222);
+                block.AdditionalByteOffset = mdf.ReadU16();
 
-            if (block.ptrChannelExtensionBlock != 0)
-            {
-                stream.Position = block.ptrChannelExtensionBlock;
-                block.SourceDepending = new ChannelExtensionBlock(mdf);
-            }
+            if (block.TextBlockChanelName != 0)
+                block.LongSignalName = TextBlock.Read(mdf, block.TextBlockChanelName);
+
+            if (block.ptrUnit != 0)
+                block.Unit = TextBlock.Read(mdf, block.ptrUnit);
+
+            if (block.ptrTextBlockComment != 0)
+                block.Comment = TextBlock.Read(mdf, block.ptrTextBlockComment);
+
+            if (block.ptrLongSignalName != 0)
+                block.LongSignalName = TextBlock.Read(mdf, block.ptrLongSignalName);
+
+            if (block.channelConversion == null && block.ptrChannelConversionBlock != 0)
+                block.ChannelConversion = ChannelConversionBlock.Read(block.Mdf, block.ptrChannelConversionBlock);
+            //if (block.ptrChannelExtensionBlock != 0)
+            //{
+            //    if (mdf.IDBlock.Version == 400)
+
+            //    block.SourceDepending = new ChannelExtensionBlock(mdf, block.ptrChannelExtensionBlock);
+            //}
 
             return block;
+        }
+
+        private static void ReadV4(Mdf mdf, ChannelBlock block)
+        {
+            block.ptrNextChannelBlock = mdf.ReadU64();
+            block.ConponentAddress = mdf.ReadU64();
+            block.TextBlockChanelName = mdf.ReadU64();
+            block.ptrChannelExtensionBlock = mdf.ReadU64();
+            block.ptrChannelConversionBlock = mdf.ReadU64();
+            block.ptrDataBlockSignal = mdf.ReadU64();
+            block.ptrUnit = mdf.ReadU64();
+            block.ptrTextBlockComment = mdf.ReadU64();
+            //block.ptrAttachment = mdf.ReadU64();
+            //block.ptrDefaultDGBlock = mdf.ReadU64();
+            //block.ptrDefaultCGBlock = mdf.ReadU64();
+            //block.ptrDefaultCurrentChanelBlock = mdf.ReadU64();
+            block.TypeV4 = (ChannelTypeV4)mdf.ReadByte();
+            block.ptrSyncType = mdf.ReadByte();
+            block.SignalTypeV4 = (SignalTypeV4)mdf.ReadByte();
+            block.BitOffset = mdf.ReadByte();
+            block.AdditionalByteOffset = mdf.ReadU32();
+            block.NumberOfBits = (ushort)mdf.ReadU32();
+            block.ChannelFlags = mdf.ReadU32();
+            block.InvalidBitPos = mdf.ReadU32();
+            block.Precision = mdf.ReadByte();
+            block.Reserved1 = mdf.ReadByte();
+            block.AttachmentCount = mdf.ReadU16();
+            block.ValRangeMin = mdf.ReadDouble();
+            block.ValRangeMax = mdf.ReadDouble();
+            block.LimitMin = mdf.ReadDouble();
+            block.LimitMax = mdf.ReadDouble();
+            block.LimitMinExt = mdf.ReadDouble();
+            block.LimitMaxExt = mdf.ReadDouble();
+
+            if (block.TextBlockChanelName != 0)
+                block.LongSignalName = TextBlock.Read(mdf, block.TextBlockChanelName);
+
+            if (block.ptrUnit != 0)
+                block.Unit = TextBlock.Read(mdf, block.ptrUnit);
+
+            if (block.ptrTextBlockComment != 0)
+                block.Comment = TextBlock.Read(mdf, block.ptrTextBlockComment);
+
+            if (block.ptrLongSignalName != 0)
+                block.LongSignalName = TextBlock.Read(mdf, block.ptrLongSignalName);
+
+            if (block.channelConversion == null && block.ptrChannelConversionBlock != 0)
+                block.ChannelConversion = ChannelConversionBlock.Read(block.Mdf, block.ptrChannelConversionBlock);
         }
 
         public override string ToString()
@@ -174,12 +261,12 @@
         {
             base.Write(array, ref index);
 
-            var bytesChannelType = BitConverter.GetBytes((ushort)Type);
+            var bytesChannelType = BitConverter.GetBytes((ushort)TypeV3);
             var bytesSignalName = Mdf.IDBlock.Encoding.GetBytes(SignalName);
             var bytesSignalDesc = Mdf.IDBlock.Encoding.GetBytes(SignalDescription);
             var bytesBitOffset = BitConverter.GetBytes(BitOffset);
             var bytesNumOfBits = BitConverter.GetBytes(NumberOfBits);
-            var bytesSignalDataType = BitConverter.GetBytes((ushort)SignalType);
+            var bytesSignalDataType = BitConverter.GetBytes((ushort)SignalTypeV3);
             var bytesValueRangeValid = BitConverter.GetBytes(ValueRange);
             var bytesMinValue = BitConverter.GetBytes(MinValue);
             var bytesMaxValue = BitConverter.GetBytes(MaxValue);

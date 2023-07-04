@@ -1,80 +1,23 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{B48EFA8A-CCE6-486F-BD55-F8B8EB44E8DC}</ProjectGuid>
+    <TargetFramework>net6.0-windows</TargetFramework>
     <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>ASAM.MDF</RootNamespace>
-    <AssemblyName>ASAM.MDF</AssemblyName>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
+    <PlatformTarget>x64</PlatformTarget>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
+    <PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" />
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Libary\Block.cs" />
-    <Compile Include="Libary\BlockCache.cs" />
-    <Compile Include="Libary\Blocks.cs" />
-    <Compile Include="Libary\ByteOrder.cs" />
-    <Compile Include="Libary\ChannelBlock.cs" />
-    <Compile Include="Libary\ChannelCollection.cs" />
-    <Compile Include="Libary\ChannelConversionBlock.cs" />
-    <Compile Include="Libary\ChannelDependencyBlock.cs" />
-    <Compile Include="Libary\ChannelExtensionBlock.cs" />
-    <Compile Include="Libary\ChannelGroupBlock.cs" />
-    <Compile Include="Libary\ChannelGroupCollection.cs" />
-    <Compile Include="Libary\Common.cs" />
-    <Compile Include="Libary\ConversionData.cs" />
-    <Compile Include="Libary\DataGroupBlock.cs" />
-    <Compile Include="Libary\DataGroupCollection.cs" />
-    <Compile Include="Libary\DataRecord.cs" />
-    <Compile Include="Libary\DimBlockSupplement.cs" />
-    <Compile Include="Libary\HeaderBlock.cs" />
-    <Compile Include="Libary\IdentificationBlock.cs" />
-    <Compile Include="Libary\INext.cs" />
-    <Compile Include="Libary\Mdf.cs" />
-    <Compile Include="Libary\MdfVersionAttribute.cs" />
-    <Compile Include="Libary\ProgramBlock.cs" />
-    <Compile Include="Libary\RawCache.cs" />
-    <Compile Include="Libary\SampleReductionBlock.cs" />
-    <Compile Include="Libary\SampleReductionCollection.cs" />
-    <Compile Include="Libary\TextBlock.cs" />
-    <Compile Include="Libary\TriggerBlock.cs" />
-    <Compile Include="Libary\Types\ChannelType.cs" />
-    <Compile Include="Libary\Types\ConversionType.cs" />
-    <Compile Include="Libary\Types\DependencyType.cs" />
-    <Compile Include="Libary\Types\ExtensionType.cs" />
-    <Compile Include="Libary\Types\FloatingPointFormat.cs" />
-    <Compile Include="Libary\Types\SignalType.cs" />
-    <Compile Include="Libary\Types\TimeQuality.cs" />
-    <Compile Include="Libary\VectorCanBlockSupplement.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
+    <None Update="libdeflate.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

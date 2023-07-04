@@ -1,7 +1,7 @@
 ﻿namespace ASAM.MDF.Libary
 {
     using System;
-
+    using System.Linq;
     using ASAM.MDF.Libary.Types;
 
     public class ConversionData
@@ -41,8 +41,13 @@
             if (Parent == null || Data == null)
                 throw new FormatException();
 
-            int estLength = GetEstimatedParametersCount(Parent.ConversionType);
-            
+            int estLength = 0;
+            if (Parent.Mdf.IDBlock.Version >= 400)
+                estLength = Parent.ValParamCount;
+            else
+                estLength = GetEstimatedParametersCount(Parent.ConversionType);
+
+
             if (Data.Length != estLength * 8)
                 throw new FormatException();
 
@@ -58,35 +63,54 @@
                 return intValue;
 
             var p = GetParameters();
-
-            switch (Parent.ConversionType)
+            if (Parent.Mdf.IDBlock.Version >= 400)
             {
-                case ConversionType.Linear:
-                    return intValue * p[1] + p[0];
+                switch (Parent.ConversionType4)
+                {
+                    case ConversionType4.None: 
+                        return intValue;
 
-                case ConversionType.Exponential:
-                    if (p[3] == 0)
-                        return Math.Log10(((intValue - p[6]) * p[5] - p[2]) / p[0]) / p[1];
+                    case ConversionType4.Linear:
+                        return intValue * p[1] + p[0];
 
-                    if (p[0] == 0)
-                        return Math.Log10((p[2] / (intValue - p[6]) - p[5]) / p[3]) / p[4];
+                    case ConversionType4.Rational:
+                        return (p[0] * intValue * intValue + p[1] * intValue + p[2]) / (p[3] * intValue * intValue + p[4] * intValue + p[5]);
 
-                    throw new NotSupportedException();
+                    default:
+                        throw new NotSupportedException("Conversion type '" + Parent.ConversionType4 + "' is not supported yet");
+                }
+            }
+            else
+            {
+                switch (Parent.ConversionType)
+                {
+                    case ConversionType.Linear:
+                        return intValue * p[1] + p[0];
 
-                case ConversionType.Logarithmic:
-                    if (p[3] == 0)
-                        return Math.Exp(((intValue - p[6]) * p[5] - p[2]) / p[0]) / p[1];
+                    case ConversionType.Exponential:
+                        if (p[3] == 0)
+                            return Math.Log10(((intValue - p[6]) * p[5] - p[2]) / p[0]) / p[1];
 
-                    if (p[0] == 0)
-                        return Math.Exp((p[2] / (intValue - p[6]) - p[5]) / p[3]) / p[4];
+                        if (p[0] == 0)
+                            return Math.Log10((p[2] / (intValue - p[6]) - p[5]) / p[3]) / p[4];
 
-                    throw new NotSupportedException();
+                        throw new NotSupportedException();
 
-                case ConversionType.RationalConversion:
-                    return (p[0] * intValue * intValue + p[1] * intValue + p[2]) / (p[3] * intValue * intValue + p[4] * intValue + p[5]);
+                    case ConversionType.Logarithmic:
+                        if (p[3] == 0)
+                            return Math.Exp(((intValue - p[6]) * p[5] - p[2]) / p[0]) / p[1];
 
-                default:
-                    throw new NotSupportedException("Conversion type '" + Parent.ConversionType + "' is not supported yet");
+                        if (p[0] == 0)
+                            return Math.Exp((p[2] / (intValue - p[6]) - p[5]) / p[3]) / p[4];
+
+                        throw new NotSupportedException();
+
+                    case ConversionType.RationalConversion:
+                        return (p[0] * intValue * intValue + p[1] * intValue + p[2]) / (p[3] * intValue * intValue + p[4] * intValue + p[5]);
+
+                    default:
+                        throw new NotSupportedException("Conversion type '" + Parent.ConversionType + "' is not supported yet");
+                }
             }
         }
         public void SetParameters(params double[] parameters)

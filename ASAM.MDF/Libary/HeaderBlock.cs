@@ -1,9 +1,6 @@
 ﻿namespace ASAM.MDF.Libary
 {
     using System;
-    using System.IO;
-    using System.Text;
-
     using ASAM.MDF.Libary.Types;
 
     public class HeaderBlock : Block
@@ -15,6 +12,9 @@
         private string subject;
         private string time;
         private string timerIdentification;
+        private ulong ptrFirstDataGroup;
+        private ulong ptrTextBlock;
+        private uint ptrProgramBlock;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="HeaderBlock" /> class.
@@ -24,7 +24,26 @@
         private HeaderBlock(Mdf mdf) : base(mdf)
         {
         }
-        
+
+        [MdfVersion(400, 0)]
+        public ulong StartTimeNs { get; set; }
+        [MdfVersion(400, 0)]
+        public short TimeZoneOffsetMinutes { get; set; }
+        [MdfVersion(400, 0)]
+        public short DstOffsetMinutes { get; set; }
+        [MdfVersion(400, 0)]
+        public byte TimeFlags { get; set; }
+        [MdfVersion(400, 0)]
+        public byte TimeClass { get; set; }
+        [MdfVersion(400, 0)]
+        public byte Flags { get; set; }
+        [MdfVersion(400, 0)]
+        public byte Reserved1 { get; set; }
+        [MdfVersion(400, 0)]
+        public double StartAngle { get; set; }
+        [MdfVersion(400, 0)]
+        public double StartDistance { get; set; }
+
         /// <summary>
         /// Gets the file comment.
         /// </summary>
@@ -194,31 +213,35 @@
 
             return block;
         }
-        internal static HeaderBlock Read(Mdf mdf, Stream stream)
+        internal static HeaderBlock Read(Mdf mdf)
         {
             var block = new HeaderBlock(mdf);
-            block.Read(stream);
-
-            var data = new byte[block.Size - 4];
-            var read = stream.Read(data, 0, data.Length);
-
-            if (read != data.Length)
-                throw new FormatException();
-
-            block.DataGroupsCount = BitConverter.ToUInt16(data, 12);
-            block.Date = mdf.IDBlock.Encoding.GetString(data, 14, 10).Humanize();
-            block.Time = mdf.IDBlock.Encoding.GetString(data, 24, 8).Humanize();
-            block.Author = mdf.IDBlock.Encoding.GetString(data, 32, 32).Humanize();
-            block.Organization = mdf.IDBlock.Encoding.GetString(data, 64, 32).Humanize();
-            block.Project = mdf.IDBlock.Encoding.GetString(data, 96, 32).Humanize();
-            block.Subject = mdf.IDBlock.Encoding.GetString(data, 128, 32).Humanize();
-
-            if (mdf.IDBlock.Version >= 320)
+            block.Read();
+            if (mdf.IDBlock.Version >= 400)
             {
-                block.TimeStamp = BitConverter.ToUInt64(data, 160);
-                block.UTCTimeOffset = BitConverter.ToInt16(data, 168);
-                block.TimeQuality = (TimeQuality)BitConverter.ToUInt16(data, 170);
-                block.TimerIdentification = mdf.IDBlock.Encoding.GetString(data, 172, 32).Humanize();
+                ReadV4(mdf, block);
+                return block;
+            }
+
+            block.ptrFirstDataGroup = mdf.ReadU32();
+            block.ptrTextBlock = mdf.ReadU32();
+            block.ptrProgramBlock = mdf.ReadU32();
+
+            block.DataGroupsCount = mdf.ReadU16();
+
+            block.Date = mdf.GetString(10);
+            block.Time = mdf.GetString(8);
+            block.Author = mdf.GetString(32);
+            block.Organization = mdf.GetString(32);
+            block.Project = mdf.GetString(32);
+            block.Subject = mdf.GetString(32);
+
+            if (mdf.IDBlock.Version == 320)
+            {
+                block.TimeStamp = mdf.ReadU64();
+                block.UTCTimeOffset = mdf.Read16();
+                block.TimeQuality = (TimeQuality)mdf.ReadU16();
+                block.TimerIdentification = mdf.GetString(32);
             }
             else
             {
@@ -228,32 +251,27 @@
                 block.TimerIdentification = "";
             }
 
-            var ptrFirstDataGroup = BitConverter.ToUInt32(data, 0);
-            var ptrTextBlock = BitConverter.ToUInt32(data, 4);
-            var ptrProgramBlock = BitConverter.ToUInt32(data, 8);
-
             // Check if ptrTextBlock is null
-            if (ptrTextBlock != 0)
+            if (block.ptrTextBlock != 0)
             {
-                stream.Position = ptrTextBlock;
-                block.FileComment = TextBlock.Read(mdf, stream);
+                block.FileComment = TextBlock.Read(mdf, block.ptrTextBlock);
             }
 
             // Check if ptrProgramBlock is null
-            if (ptrProgramBlock != 0)
+            if (block.ptrProgramBlock != 0)
             {
-                stream.Position = ptrProgramBlock;
-                block.ProgramBlock = ProgramBlock.Read(mdf, stream);
+                block.ProgramBlock = ProgramBlock.Read(mdf, block.ptrProgramBlock);
             }
 
             // Check if ptrFirstDataGroup is null
-            if (ptrFirstDataGroup != 0)
+            if (block.ptrFirstDataGroup != 0)
             {
-                mdf.DataGroups.Read(DataGroupBlock.Read(mdf, stream, ptrFirstDataGroup));
+                mdf.DataGroups.Read(DataGroupBlock.Read(mdf, block.ptrFirstDataGroup));
             }
 
             return block;
         }
+
 
         internal override ushort GetSize()
         {
@@ -328,6 +346,39 @@
             Array.Copy(bytesProgramLink, 0, array, baseIndex + 12, bytesProgramLink.Length);
 
             ProgramBlock.Write(array, ref index);
+        }
+        private static void ReadV4(Mdf mdf, HeaderBlock block)
+        {
+
+            block.ptrFirstDataGroup = mdf.ReadU64(); //Adress DataGroup
+                                               //skiped: FileHistoryBlock (not used) +8
+                                               //skiped: Chanel... (not used)        +8
+                                               //skiped: AttachmentBlock (not used)  +8
+                                               //skiped: EventBlock (not used)       +8
+            ulong skippedCount = 8 * 4;
+            mdf.UpdatePosition(mdf.position + skippedCount);
+
+            block.ptrTextBlock = mdf.ReadU64();
+            block.StartTimeNs = mdf.ReadU64();
+            block.TimeZoneOffsetMinutes = mdf.Read16();
+            block.DstOffsetMinutes = mdf.Read16();
+            block.TimeFlags = mdf.ReadByte();
+            block.TimeClass = mdf.ReadByte();
+            block.Flags = mdf.ReadByte();
+            block.Reserved1 = mdf.ReadByte();
+            block.StartAngle = mdf.ReadDouble();
+            block.StartDistance = mdf.ReadDouble();
+
+            if (block.ptrTextBlock != 0)
+            {
+                block.FileComment = TextBlock.Read(mdf, block.ptrTextBlock);
+            }
+
+            // Check if ptrFirstDataGroup is null
+            if (block.ptrFirstDataGroup != 0)
+            {
+                mdf.DataGroups.Read(DataGroupBlock.Read(mdf, block.ptrFirstDataGroup));
+            }
         }
     }
 }

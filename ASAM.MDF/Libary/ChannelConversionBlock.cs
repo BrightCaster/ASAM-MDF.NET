@@ -1,6 +1,7 @@
 ﻿namespace ASAM.MDF.Libary
 {
     using System;
+    using System.Collections.Generic;
     using System.IO;
 
     using ASAM.MDF.Libary.Types;
@@ -23,8 +24,24 @@
             set { SetStringValue(ref physicalUnit, value, 20); }
         }
         public ConversionType ConversionType { get; set; }
+        public ConversionType4 ConversionType4 { get; private set; }
+        public byte Precision { get; private set; }
+        public ushort Flags { get; private set; }
         public ushort SizeInformation { get; private set; }
+        public ushort ValParamCount { get; private set; }
         public ConversionData AdditionalConversionData { get; internal set; }
+        public ulong TextBlockName { get; private set; }
+        public ulong TextBlockUnit { get; private set; }
+
+        private ulong ptrFileComment;
+        private int indexPointer;
+
+        public ulong InverseConversion { get; private set; }
+        public TextBlock FileComment { get; private set; }
+        public TextBlock ConversionUnit { get; private set; }
+        public TextBlock ConversionName { get; private set; }
+        public List<TextBlock> ConvTabT { get; internal set; }
+        public List<double> ConvTabTValue { get; internal set; }
 
         public static ChannelConversionBlock Create(Mdf mdf)
         {
@@ -34,32 +51,63 @@
                 PhysicalUnit = "",
             };
         }
-        internal static ChannelConversionBlock Read(Mdf mdf, Stream stream, uint position)
+        internal static ChannelConversionBlock Read(Mdf mdf, ulong position)
         {
-            stream.Position = position;
+            mdf.position = position;
 
             var block = new ChannelConversionBlock(mdf);
-            block.Read(stream);
+            block.Read();
 
-            var data = new byte[block.Size - 4];
-            var read = stream.Read(data, 0, data.Length);
-
-            if (read != data.Length)
-                throw new FormatException();
-
-            block.PhysicalValueRangeValid = BitConverter.ToInt16(data, 0) != 0;
-            block.MinPhysicalValue = BitConverter.ToDouble(data, 2);
-            block.MaxPhysicalValue = BitConverter.ToDouble(data, 10);
-            block.PhysicalUnit = mdf.IDBlock.Encoding.GetString(data, 18, 20).Humanize();
-            block.ConversionType = (ConversionType)BitConverter.ToUInt16(data, 38);
-            block.SizeInformation = BitConverter.ToUInt16(data, 40);
-
-            if (block.SizeInformation > 0)
+            if (mdf.IDBlock.Version >= 400)
             {
-                block.AdditionalConversionData.Data = new byte[ConversionData.GetEstimatedParametersSize(block.ConversionType)];
+                
+                block.TextBlockName = mdf.ReadU64();
+                block.TextBlockUnit = mdf.ReadU64();
+                block.ptrFileComment = mdf.ReadU64();
+                block.InverseConversion = mdf.ReadU64();
+                var lastPosAddress = mdf.position;
 
-                Array.Copy(data, 42, block.AdditionalConversionData.Data, 0, block.AdditionalConversionData.Data.Length);
+                if (block.LinksCount > 4)
+                    mdf.UpdatePosition(lastPosAddress + (block.LinksCount - 4) * 8);
+
+                block.ConversionType4 = (ConversionType4)mdf.ReadByte();
+                block.Precision = mdf.ReadByte();
+                block.Flags = mdf.ReadU16();
+                block.SizeInformation = mdf.ReadU16();
+                block.ValParamCount = mdf.ReadU16();
+                block.MinPhysicalValue = mdf.ReadDouble();
+                block.MaxPhysicalValue = mdf.ReadDouble();
+
+                block.indexPointer = (int)mdf.position;
+
+                block.AdditionalConversionData.Data = new byte[block.ValParamCount * 8];
+
+                Array.Copy(mdf.Data, block.indexPointer, block.AdditionalConversionData.Data, 0, block.AdditionalConversionData.Data.Length);
             }
+            else
+            {
+                block.PhysicalValueRangeValid = mdf.Read16() != 0;
+                block.MinPhysicalValue = mdf.ReadDouble();
+                block.MaxPhysicalValue = mdf.ReadDouble();
+                block.PhysicalUnit = mdf.GetString(20);
+                block.ConversionType = (ConversionType)mdf.ReadU16();
+                block.SizeInformation = mdf.ReadU16();
+
+                if (block.SizeInformation > 0)
+                {
+                    block.AdditionalConversionData.Data = new byte[ConversionData.GetEstimatedParametersSize(block.ConversionType)];
+
+                    Array.Copy(mdf.Data, (int)mdf.position, block.AdditionalConversionData.Data, 0, block.AdditionalConversionData.Data.Length);
+                }
+            }
+            if (block.ptrFileComment != 0)
+                block.FileComment = TextBlock.Read(mdf, block.ptrFileComment);
+            
+            if (block.TextBlockName != 0)
+                block.ConversionName = TextBlock.Read(mdf, block.TextBlockName);
+            
+            if (block.TextBlockUnit != 0)
+                block.ConversionUnit = TextBlock.Read(mdf, block.TextBlockUnit);
 
             return block;
         }

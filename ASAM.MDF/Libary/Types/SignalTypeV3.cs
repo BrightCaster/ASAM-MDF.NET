@@ -1,7 +1,7 @@
 ﻿
 namespace ASAM.MDF.Libary.Types
 {
-    public enum SignalType : ushort
+    public enum SignalTypeV3 : ushort
     {
         UInt = 0,
         Int = 1,

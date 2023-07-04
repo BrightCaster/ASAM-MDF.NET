@@ -1,6 +1,7 @@
 ﻿namespace ASAM.MDF.Tests
 {
     using System;
+    using System.Collections.Generic;
     using System.IO;
     using System.Text;
 
@@ -46,24 +47,24 @@
             var channelGroupText = "TestChannelGroup";
 
             var channelsCount = 2;
-            var channel1ChannelType = ChannelType.Time;
+            var channel1ChannelType = ChannelTypeV3.Time;
             var channel1SignalName = "time";
             var channel1SignalDesc = "channel1SignalDesc";
             var channel1BitOffset = (ushort)0;
             var channel1NumOfBits = (ushort)64;
-            var channel1SignalType = SignalType.IEEE754Double;
+            var channel1SignalType = SignalTypeV3.IEEE754Double;
             var channel1ValueRange = true;
             var channel1MinValue = -5.98d;
             var channel1MaxValue = 1.254E29d;
             var channel1SampleRate = 0d;
             var channel1AdditionlOffset = (ushort)0;
             
-            var channel2ChannelType = ChannelType.Data;
+            var channel2ChannelType = ChannelTypeV3.Data;
             var channel2SignalName = "data";
             var channel2SignalDesc = "channel2SignalDesc";
             var channel2BitOffset = (ushort)64;
             var channel2NumOfBits = (ushort)16;
-            var channel2SignalType = SignalType.Int;
+            var channel2SignalType = SignalTypeV3.Int;
             var channel2ValueRange = false;
             var channel2MinValue = 0d;
             var channel2MaxValue = 0d;
@@ -126,12 +127,12 @@
                 channelGroup.Channels.Add(ChannelBlock.Create(mdf));
 
             var channel1 = channelGroup.Channels[0];
-            channel1.Type = channel1ChannelType;
+            channel1.TypeV3 = channel1ChannelType;
             channel1.SignalName = channel1SignalName;
             channel1.SignalDescription = channel1SignalDesc;
             channel1.BitOffset = channel1BitOffset;
             channel1.NumberOfBits = channel1NumOfBits;
-            channel1.SignalType = channel1SignalType;
+            channel1.SignalTypeV3 = channel1SignalType;
             channel1.ValueRange = channel1ValueRange;
             channel1.MinValue = channel1MinValue;
             channel1.MaxValue = channel1MaxValue;
@@ -139,12 +140,12 @@
             channel1.AdditionalByteOffset = channel1AdditionlOffset;
 
             var channel2 = channelGroup.Channels[1];
-            channel2.Type = channel2ChannelType;
+            channel2.TypeV3 = channel2ChannelType;
             channel2.SignalName = channel2SignalName;
             channel2.SignalDescription = channel2SignalDesc;
             channel2.BitOffset = channel2BitOffset;
             channel2.NumberOfBits = channel2NumOfBits;
-            channel2.SignalType = channel2SignalType;
+            channel2.SignalTypeV3 = channel2SignalType;
             channel2.ValueRange = channel2ValueRange;
             channel2.MinValue = channel2MinValue;
             channel2.MaxValue = channel2MaxValue;
@@ -173,7 +174,7 @@
             // Read.
             using (var stream = new MemoryStream(bytes))
             {
-                mdf = new Mdf(stream);
+                mdf = new Mdf(bytes);
 
                 // IDBLOCK.
                 Assert.NotNull(mdf.IDBlock);
@@ -234,24 +235,24 @@
                 channel1 = channelGroup.Channels[0];
                 channel2 = channelGroup.Channels[1];
 
-                Assert.AreEqual(channel1ChannelType, channel1.Type);
+                Assert.AreEqual(channel1ChannelType, channel1.TypeV3);
                 Assert.AreEqual(channel1SignalName, channel1.SignalName);
                 Assert.AreEqual(channel1SignalDesc, channel1.SignalDescription);
                 Assert.AreEqual(channel1BitOffset, channel1.BitOffset);
                 Assert.AreEqual(channel1NumOfBits, channel1.NumberOfBits);
-                Assert.AreEqual(channel1SignalType, channel1.SignalType);
+                Assert.AreEqual(channel1SignalType, channel1.SignalTypeV3);
                 Assert.AreEqual(channel1ValueRange, channel1.ValueRange);
                 Assert.AreEqual(channel1MinValue, channel1.MinValue);
                 Assert.AreEqual(channel1MaxValue, channel1.MaxValue);
                 Assert.AreEqual(channel1SampleRate, channel1.SampleRate);
                 Assert.AreEqual(channel1AdditionlOffset, channel1.AdditionalByteOffset);
 
-                Assert.AreEqual(channel2ChannelType, channel2.Type);
+                Assert.AreEqual(channel2ChannelType, channel2.TypeV3);
                 Assert.AreEqual(channel2SignalName, channel2.SignalName);
                 Assert.AreEqual(channel2SignalDesc, channel2.SignalDescription);
                 Assert.AreEqual(channel2BitOffset, channel2.BitOffset);
                 Assert.AreEqual(channel2NumOfBits, channel2.NumberOfBits);
-                Assert.AreEqual(channel2SignalType, channel2.SignalType);
+                Assert.AreEqual(channel2SignalType, channel2.SignalTypeV3);
                 Assert.AreEqual(channel2ValueRange, channel2.ValueRange);
                 Assert.AreEqual(channel2MinValue, channel2.MinValue);
                 Assert.AreEqual(channel2MaxValue, channel2.MaxValue);
@@ -281,4 +282,5 @@
             }
         }
     }
+
 }

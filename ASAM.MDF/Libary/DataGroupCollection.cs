@@ -116,5 +116,9 @@
         {
             throw new NotImplementedException();
         }
+        public DataGroupBlock Find(Predicate<DataGroupBlock> predicate)
+        {
+            return items.Find(predicate);
+        }
     }
 }

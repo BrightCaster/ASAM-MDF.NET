@@ -1,5 +1,4 @@
-﻿
-namespace ASAM.MDF.Libary.Types
+﻿namespace ASAM.MDF.Libary.Types
 {
     public enum ConversionType : ushort
     {
@@ -16,5 +15,20 @@ namespace ASAM.MDF.Libary.Types
         Date = 132,
         Time = 133,
         OneToOne = 65535,
+    }
+    public enum ConversionType4 : byte
+    {
+        None,
+        Linear,
+        Rational,
+        Algebraic,
+        TabularInterpolated,
+        Tabular,
+        RationalTabular,
+        TabularToText,
+        RationalTabularToText,
+        TextToTabular,
+        Translation,
+        BitField
     }
 }

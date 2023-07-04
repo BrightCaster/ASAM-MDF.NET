@@ -1,7 +1,7 @@
 ﻿
 namespace ASAM.MDF.Libary.Types
 {
-    public enum ChannelType
+    public enum ChannelTypeV3
     {
         Data,
         Time,

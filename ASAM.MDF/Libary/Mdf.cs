@@ -5,23 +5,20 @@
 
     public class Mdf
     {
+        internal ulong position;
+        internal byte[] data;
+
         /// <summary>
         /// Read MDF from stream.
         /// </summary>
         /// <param name="stream"></param>
-        public Mdf(Stream stream)
+        public Mdf(byte[] bytes)
         {
-            if (stream == null)
-                throw new ArgumentNullException("stream");
-            if (!stream.CanSeek)
-                throw new ArgumentException("stream");
-
-            Data = stream;
-            Data.Position = 0;
+            data = bytes;
 
             DataGroups = new DataGroupCollection(this);
-            IDBlock = IdentificationBlock.Read(this, stream);
-            HDBlock = HeaderBlock.Read(this, stream);
+            IDBlock = IdentificationBlock.Read(this);
+            HDBlock = HeaderBlock.Read(this);
         }
         public Mdf()
         {
@@ -30,13 +27,12 @@
             HDBlock = HeaderBlock.Create(this);
         }
 
-        public bool ReadOnly { get { return !Data.CanRead; } }
 
         public IdentificationBlock IDBlock { get; private set; }
         public HeaderBlock HDBlock { get; private set; }
         public DataGroupCollection DataGroups { get; private set; }
 
-        internal Stream Data { get; private set; }
+        internal byte[] Data => data;
 
         public byte[] GetBytes()
         {
@@ -72,6 +68,33 @@
                 size += DataGroups[i].GetSizeTotal();
 
             return size;
+        }
+
+        internal byte[] ReadBytes(int recordSize)
+        {
+            var value = new byte[recordSize];
+
+            Array.Copy(data, (int)position, value, 0, value.Length);
+
+            position += (ulong)value.Length;
+
+            return value;
+        }
+        internal byte[] ReadBytes(byte[] data, int recordSize, ref int position)
+        {
+            var value = new byte[recordSize];
+
+            Array.Copy(data, position, value, 0, value.Length);
+
+            position += value.Length;
+
+            return value;
+        }
+        internal string GetNameBlock(ulong position)
+        {
+            var index = position + 2;
+            var name = IDBlock.Encoding.GetString(Data, (int)index, 2);
+            return name;
         }
     }
 }
