@@ -171,7 +171,7 @@
             if (block.ptrTextBlockComment != 0)
                 block.Comment = TextBlock.Read(mdf, block.ptrTextBlockComment);
 
-            if (block.ptrLongSignalName != 0 && (ulong)mdf.Data.Length > block.ptrLongSignalName)
+            if (block.ptrLongSignalName != 0)
                 block.LongSignalName = TextBlock.Read(mdf, block.ptrLongSignalName);
 
             if (block.channelConversion == null && block.ptrChannelConversionBlock != 0)
