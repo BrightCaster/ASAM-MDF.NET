@@ -2,6 +2,7 @@
 {
     using System;
     using System.IO;
+    using System.Linq;
     using System.Text;
 
     public class TextBlock : Block
@@ -53,6 +54,9 @@
 
         internal static TextBlock Read(Mdf mdf, ulong position)
         {
+            if ((ulong)mdf.Data.Length < position)
+                return null;
+
             mdf.UpdatePosition(position);
 
             var block = new TextBlock(mdf);

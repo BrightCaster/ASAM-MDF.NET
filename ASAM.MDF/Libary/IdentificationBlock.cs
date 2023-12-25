@@ -117,6 +117,8 @@
             set
             {
                 codePage = value;
+                if (value == 1251)
+                    Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
                 Encoding = value == 0 ? Encoding.ASCII : Encoding.GetEncoding(value);
             }
         }
