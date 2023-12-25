@@ -44,7 +44,7 @@
         {
             get
             {
-                if (next == null && ptrNextChannelBlock != 0)
+                if (next == null && ptrNextChannelBlock != 0 && ptrNextChannelBlock < (ulong)Mdf.Data.Length)
                     next = Read(Mdf, ptrNextChannelBlock);
 
                 return next;
