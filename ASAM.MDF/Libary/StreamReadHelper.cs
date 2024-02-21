@@ -112,5 +112,42 @@ namespace ASAM.MDF.Libary
             
             return value;
         }
+
+        public static ushort ValidateAddress(this ushort value, Mdf mdf)
+        {
+            if (value >= mdf.Data.Length)
+                return 0;
+            return value;
+        }
+        public static uint ValidateAddress(this uint value, Mdf mdf)
+        {
+            if (value >= mdf.Data.Length)
+                return 0;
+            return value;
+        }
+        public static ulong ValidateAddress(this ulong value, Mdf mdf)
+        {
+            if (value >= (ulong)mdf.Data.Length)
+                return 0;
+            return value;
+        }
+        public static short ValidateAddress(this short value, Mdf mdf)
+        {
+            if (value >= mdf.Data.Length)
+                return 0;
+            return value;
+        }
+        public static int ValidateAddress(this int value, Mdf mdf)
+        {
+            if (value >= mdf.Data.Length)
+                return 0;
+            return value;
+        }
+        public static long ValidateAddress(this long value, Mdf mdf)
+        {
+            if (value >= mdf.Data.Length)
+                return 0;
+            return value;
+        }
     }
 }

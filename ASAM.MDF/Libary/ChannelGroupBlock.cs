@@ -72,9 +72,9 @@
                 ReadV4(mdf, block);
                 return block;
             }
-            block.ptrNextChannelGroup = mdf.ReadU32();
-            block.ptrFirstChannelBlock = mdf.ReadU32();
-            block.ptrTextBlock = mdf.ReadU32();
+            block.ptrNextChannelGroup = mdf.ReadU32().ValidateAddress(mdf);
+            block.ptrFirstChannelBlock = mdf.ReadU32().ValidateAddress(mdf);
+            block.ptrTextBlock = mdf.ReadU32().ValidateAddress(mdf);
             block.RecordID = mdf.ReadU16();
             block.NumChannels = mdf.ReadU16();
             block.RecordSize = mdf.ReadU16();
@@ -103,12 +103,12 @@
 
         private static void ReadV4(Mdf mdf, ChannelGroupBlock block)
         {
-            block.ptrNextChannelGroup = mdf.ReadU64();
-            block.ptrFirstChannelBlock = mdf.ReadU64();
-            block.ptrTextName = mdf.ReadU64();
-            block.ptrSourceInfo = mdf.ReadU64();
-            block.ptrFirstSampleReductionBlock = mdf.ReadU64();
-            block.ptrTextBlock = mdf.ReadU64();
+            block.ptrNextChannelGroup = mdf.ReadU64().ValidateAddress(mdf);
+            block.ptrFirstChannelBlock = mdf.ReadU64().ValidateAddress(mdf);
+            block.ptrTextName = mdf.ReadU64().ValidateAddress(mdf);
+            block.ptrSourceInfo = mdf.ReadU64().ValidateAddress(mdf);
+            block.ptrFirstSampleReductionBlock = mdf.ReadU64().ValidateAddress(mdf);
+            block.ptrTextBlock = mdf.ReadU64().ValidateAddress(mdf);
             block.RecordID = mdf.ReadU64();
             block.CycleCount = mdf.ReadU64();
             block.Flags = mdf.ReadU16();

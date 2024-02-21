@@ -61,9 +61,9 @@
             if (mdf.IDBlock.Version >= 400)
             {
                 
-                block.TextBlockName = mdf.ReadU64();
-                block.TextBlockUnit = mdf.ReadU64();
-                block.ptrFileComment = mdf.ReadU64();
+                block.TextBlockName = mdf.ReadU64().ValidateAddress(mdf);
+                block.TextBlockUnit = mdf.ReadU64().ValidateAddress(mdf);
+                block.ptrFileComment = mdf.ReadU64().ValidateAddress(mdf);
                 block.InverseConversion = mdf.ReadU64();
                 var lastPosAddress = mdf.position;
 

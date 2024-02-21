@@ -82,10 +82,10 @@
                 return block;
             }
 
-            block.ptrNextDataGroup = mdf.ReadU32();
-            block.ptrFirstChannelGroupBlock = mdf.ReadU32();
-            block.ptrTriggerBlock = mdf.ReadU32();
-            block.ptrDataBlock = mdf.ReadU32();
+            block.ptrNextDataGroup = mdf.ReadU32().ValidateAddress(mdf);
+            block.ptrFirstChannelGroupBlock = mdf.ReadU32().ValidateAddress(mdf);
+            block.ptrTriggerBlock = mdf.ReadU32().ValidateAddress(mdf);
+            block.ptrDataBlock = mdf.ReadU32().ValidateAddress(mdf);
             block.NumChannelGroups = mdf.ReadU16();
             block.NumRecordIds = mdf.ReadU16();
 
@@ -120,10 +120,10 @@
 
         private static void ReadV4(Mdf mdf, DataGroupBlock block)
         {
-            block.ptrNextDataGroup = mdf.ReadU64();
-            block.ptrFirstChannelGroupBlock = mdf.ReadU64();
-            block.ptrDataBlock = mdf.ReadU64();
-            block.ptrTextBlock = mdf.ReadU64();
+            block.ptrNextDataGroup = mdf.ReadU64().ValidateAddress(mdf);
+            block.ptrFirstChannelGroupBlock = mdf.ReadU64().ValidateAddress(mdf);
+            block.ptrDataBlock = mdf.ReadU64().ValidateAddress(mdf);
+            block.ptrTextBlock = mdf.ReadU64().ValidateAddress(mdf);
             block.NumRecordIds = mdf.ReadByte();
             block.Reserved1 = mdf.ReadByte();
 

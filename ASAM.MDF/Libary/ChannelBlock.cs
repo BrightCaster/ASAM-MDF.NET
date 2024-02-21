@@ -128,11 +128,11 @@
                 ReadV4(mdf, block);
                 return block;
             }
-            block.ptrNextChannelBlock = mdf.ReadU32();
-            block.ptrChannelConversionBlock = mdf.ReadU32();
-            block.ptrChannelExtensionBlock = mdf.ReadU32();
-            block.ptrChannelDependencyBlock = mdf.ReadU32();
-            block.ptrChannelComment = mdf.ReadU32();
+            block.ptrNextChannelBlock = mdf.ReadU32().ValidateAddress(mdf);
+            block.ptrChannelConversionBlock = mdf.ReadU32().ValidateAddress(mdf);
+            block.ptrChannelExtensionBlock = mdf.ReadU32().ValidateAddress(mdf);
+            block.ptrChannelDependencyBlock = mdf.ReadU32().ValidateAddress(mdf);
+            block.ptrChannelComment = mdf.ReadU32().ValidateAddress(mdf);
             block.TypeV3 = (ChannelTypeV3)mdf.ReadU16();
             block.SignalName = mdf.GetString(32);
             block.SignalDescription = mdf.GetString(128);
@@ -154,10 +154,10 @@
             block.SampleRate = mdf.ReadDouble();
 
             if (mdf.IDBlock.Version >= MIN_VERSION_LONG_SIGNAL_NAME)
-                block.ptrLongSignalName = mdf.ReadU32();
+                block.ptrLongSignalName = mdf.ReadU32().ValidateAddress(mdf);
 
             if (mdf.IDBlock.Version >= MIN_VERSION_DISPLAY_NAME)
-                block.ptrDisplayName = mdf.ReadU32();
+                block.ptrDisplayName = mdf.ReadU32().ValidateAddress(mdf);
 
             if (mdf.IDBlock.Version >= MIN_VERSION_ADDITIONAL_BYTE_OFFSET)
                 block.AdditionalByteOffset = mdf.ReadU16();
@@ -188,14 +188,14 @@
 
         private static void ReadV4(Mdf mdf, ChannelBlock block)
         {
-            block.ptrNextChannelBlock = mdf.ReadU64();
-            block.ConponentAddress = mdf.ReadU64();
-            block.TextBlockChanelName = mdf.ReadU64();
-            block.ptrChannelExtensionBlock = mdf.ReadU64();
-            block.ptrChannelConversionBlock = mdf.ReadU64();
-            block.ptrDataBlockSignal = mdf.ReadU64();
-            block.ptrUnit = mdf.ReadU64();
-            block.ptrTextBlockComment = mdf.ReadU64();
+            block.ptrNextChannelBlock = mdf.ReadU64().ValidateAddress(mdf);
+            block.ConponentAddress = mdf.ReadU64().ValidateAddress(mdf);
+            block.TextBlockChanelName = mdf.ReadU64().ValidateAddress(mdf);
+            block.ptrChannelExtensionBlock = mdf.ReadU64().ValidateAddress(mdf);
+            block.ptrChannelConversionBlock = mdf.ReadU64().ValidateAddress(mdf);
+            block.ptrDataBlockSignal = mdf.ReadU64().ValidateAddress(mdf);
+            block.ptrUnit = mdf.ReadU64().ValidateAddress(mdf);
+            block.ptrTextBlockComment = mdf.ReadU64().ValidateAddress(mdf);
             //block.ptrAttachment = mdf.ReadU64();
             //block.ptrDefaultDGBlock = mdf.ReadU64();
             //block.ptrDefaultCGBlock = mdf.ReadU64();

@@ -223,9 +223,9 @@
                 return block;
             }
 
-            block.ptrFirstDataGroup = mdf.ReadU32();
-            block.ptrTextBlock = mdf.ReadU32();
-            block.ptrProgramBlock = mdf.ReadU32();
+            block.ptrFirstDataGroup = mdf.ReadU32().ValidateAddress(mdf);
+            block.ptrTextBlock = mdf.ReadU32().ValidateAddress(mdf);
+            block.ptrProgramBlock = mdf.ReadU32().ValidateAddress(mdf);
 
             block.DataGroupsCount = mdf.ReadU16();
 
@@ -350,7 +350,7 @@
         private static void ReadV4(Mdf mdf, HeaderBlock block)
         {
 
-            block.ptrFirstDataGroup = mdf.ReadU64(); //Adress DataGroup
+            block.ptrFirstDataGroup = mdf.ReadU64().ValidateAddress(mdf); //Adress DataGroup
                                                //skiped: FileHistoryBlock (not used) +8
                                                //skiped: Chanel... (not used)        +8
                                                //skiped: AttachmentBlock (not used)  +8
@@ -358,7 +358,7 @@
             ulong skippedCount = 8 * 4;
             mdf.UpdatePosition(mdf.position + skippedCount);
 
-            block.ptrTextBlock = mdf.ReadU64();
+            block.ptrTextBlock = mdf.ReadU64().ValidateAddress(mdf);
             block.StartTimeNs = mdf.ReadU64();
             block.TimeZoneOffsetMinutes = mdf.Read16();
             block.DstOffsetMinutes = mdf.Read16();
