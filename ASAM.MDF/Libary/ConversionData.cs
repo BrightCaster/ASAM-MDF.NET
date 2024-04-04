@@ -127,5 +127,11 @@
                 Array.Copy(pBytes, 0, Data, i * 8, pBytes.Length);
             }
         }
+        public object Clone(Mdf mdf)
+        {
+            var c = MemberwiseClone() as ConversionData;
+            c.Parent = Parent.Clone(mdf) as ChannelConversionBlock;
+            return c;
+        }
     }
 }

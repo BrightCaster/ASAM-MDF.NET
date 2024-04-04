@@ -18,5 +18,13 @@
 
             return block;
         }
+        public override Block Clone(Mdf mdf)
+        {
+            var db = base.Clone(mdf) as DataBlock;
+            db.DataOfBlock = new byte[DataOfBlock.Length];
+            DataOfBlock.CopyTo(db.DataOfBlock, 0);
+
+            return db;
+        }
     }
 }

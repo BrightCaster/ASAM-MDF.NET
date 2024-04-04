@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection.Metadata.Ecma335;
 
 namespace ASAM.MDF.Libary
 {
@@ -13,6 +14,13 @@ namespace ASAM.MDF.Libary
         public TriggerBlock(Mdf mdf)
           : base(mdf)
         {
+        }
+        public override Block Clone(Mdf mdf)
+        {
+            var tr = base.Clone(mdf) as TriggerBlock;
+            tr.Comment = Comment.Clone(mdf) as TextBlock;
+
+            return tr;
         }
     }
 }

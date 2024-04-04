@@ -21,5 +21,9 @@
             Description = Encoding.GetEncoding(mdf.IDBlock.CodePage).GetString(data, 6, 80);
             IdentificationOfEcu = Encoding.GetEncoding(mdf.IDBlock.CodePage).GetString(data, 86, 32);
         }
+        public DimBlockSupplement Clone(Mdf mdf)
+        {
+            return MemberwiseClone() as DimBlockSupplement;
+        }
     }
 }

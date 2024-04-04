@@ -120,5 +120,18 @@
         {
             return items.Find(predicate);
         }
+        public DataGroupCollection Clone(Mdf mdf)
+        {
+            var dC = MemberwiseClone() as DataGroupCollection;
+            var list = new List<DataGroupBlock>();
+
+            foreach (var item in items)
+            {
+                list.Add(item.Clone(mdf) as DataGroupBlock);
+            }
+            dC.items = list;
+            dC.Mdf = mdf;
+            return dC;
+        }
     }
 }

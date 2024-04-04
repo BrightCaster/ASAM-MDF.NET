@@ -103,5 +103,17 @@
         {
             return items.Find(predicate);
         }
+        public ChannelGroupCollection Clone(Mdf mdf)
+        {
+            var List = new List<ChannelGroupBlock>();
+            foreach (ChannelGroupBlock item in items)
+            {
+                List.Add(item.Clone(mdf) as ChannelGroupBlock);
+            }
+            var cl = MemberwiseClone() as ChannelGroupCollection;
+            cl.items = List;
+            cl.Mdf = mdf;
+            return cl;
+        }
     }
 }

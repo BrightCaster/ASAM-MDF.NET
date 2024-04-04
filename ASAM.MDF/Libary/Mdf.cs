@@ -15,7 +15,7 @@
         public Mdf(byte[] bytes)
         {
             data = bytes;
-
+            
             DataGroups = new DataGroupCollection(this);
             IDBlock = IdentificationBlock.Read(this);
             HDBlock = HeaderBlock.Read(this);
@@ -95,6 +95,14 @@
             var index = position + 2;
             var name = IDBlock.Encoding.GetString(Data, (int)index, 2);
             return name;
+        }
+        public Mdf Clone()
+        {
+            var cloned = MemberwiseClone() as Mdf;
+            cloned.HDBlock = HDBlock.Clone(cloned) as HeaderBlock;
+            cloned.DataGroups = DataGroups.Clone(cloned);
+            cloned.IDBlock = IDBlock.Clone(cloned);
+            return cloned;
         }
     }
 }
