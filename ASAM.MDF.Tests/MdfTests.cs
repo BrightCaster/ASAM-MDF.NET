@@ -2,10 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Diagnostics;
     using System.IO;
-    using System.Linq;
-    using System.Reflection;
     using System.Text;
 
     using ASAM.MDF.Libary;
@@ -19,7 +16,7 @@
         [Test]
         public void Test()
         {
-            var filename = "\\\\Foond\\Проекты\\Autogramma\\Материалы разработки\\Примеры файлов измерений\\EU.dat";
+            var filename = "C:\\Users\\Михаил\\Desktop\\Работа\\EU.dat";
             var bytes = File.ReadAllBytes(filename);
             var mdf = new Mdf(bytes);
             var cloned = mdf.Clone();
@@ -29,101 +26,28 @@
 
         private void CheckHashCodes(Mdf mdf, Mdf cloned)
         {
-            var listMdf = RecursiveObjectData(mdf, null, new HashSet<object>() { mdf }).ToList();
-            var listCloned = RecursiveObjectData(cloned, null, new HashSet<object>() { cloned }).ToList();
-
-            for (int i = 0; i < listMdf.Count; i++)
-            {
-                var m1 = listMdf[i];
-                var m2 = listCloned[i];
-                if (m1.GetHashCode() == m2.GetHashCode())
-                    throw new Exception($"index are equals: {i}, \n{m1}\n{m2}");
-            }
+            var listMdf = RecursiveObjectData(mdf);
+            var listCloned = RecursiveObjectData(cloned);
 
 
         }
-        private HashSet<object> RecursiveObjectData(object value, Type typeV = null, HashSet<object> list = null)
+        private List<object> RecursiveObjectData(object value, List<object> list = null)
         {
-            if (list == null)
-                list = new HashSet<object>();
-
-            if (value == null)
-                return list;
+            if (list ==null)
+                list = new List<object>();
 
             var type = value.GetType();
-            if (typeV != null)
-                type = typeV;
-
             var fields = type.GetFields();
             var properties = type.GetProperties();
-            foreach (var prop in properties)
+            foreach ( var prop in properties )
             {
-                var attributes = prop.GetCustomAttribute<NonSerializeAttribute>(true);
-                if (attributes != null)
-                    continue;
-
-                try
-                {
-                    var propValue = prop.GetValue(value);
-                    if (prop.PropertyType.IsValueType)
-                    {
-                        if (!list.Contains(propValue))
-                            list.Add(propValue);
-                    }
-                    else if (propValue is string)
-                    {
-                        if (!list.Contains(propValue))
-                            list.Add(propValue);
-                    }
-                    else
-                    {
-                        if (!list.Contains(propValue))
-                        {
-                            list.Add(propValue);
-                            list = RecursiveObjectData(propValue, prop.PropertyType, list);
-                        }
-                    }
-                }
-                catch (Exception e)
-                {
-                    Debug.Print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
-                    Debug.Print(e.Message);
-                    Debug.Print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
-                }
-                finally
-                {
-                    Debug.Print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
-                    Debug.Print(prop.ToString() + "| Count:" + list.Count.ToString());
-                    Debug.Print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
-                }
-
-
+                list.Add(prop);
+                list = RecursiveObjectData(prop, list);
             }
-            foreach (var field in fields)
+            foreach ( var field in fields)
             {
-                var attributes = field.GetCustomAttribute<NonSerializeAttribute>(true);
-                if (attributes != null)
-                    continue;
-
-                var fieldValue = field.GetValue(value);
-                if (field.FieldType.IsValueType)
-                {
-                    if (!list.Contains(fieldValue))
-                        list.Add(fieldValue);
-                }
-                else if (fieldValue is string)
-                {
-                    if (!list.Contains(fieldValue))
-                        list.Add(fieldValue);
-                }
-                else
-                {
-                    if (!list.Contains(fieldValue))
-                    {
-                        list.Add(fieldValue);
-                        list = RecursiveObjectData(fieldValue, field.FieldType, list);
-                    }
-                }
+                list.Add(field);
+                list = RecursiveObjectData(field, list);
             }
             return list;
         }

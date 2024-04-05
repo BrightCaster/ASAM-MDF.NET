@@ -32,8 +32,8 @@ namespace ASAM.MDF.Libary
         public override Block Clone(Mdf mdf)
         {
             var cheB = base.Clone(mdf) as ChannelExtensionBlock;
-            cheB.DimBlockSupplement = DimBlockSupplement?.Clone(mdf);
-            cheB.VectorCanBlockSupplement = VectorCanBlockSupplement?.Clone(mdf);
+            cheB.DimBlockSupplement = DimBlockSupplement.Clone(mdf);
+            cheB.VectorCanBlockSupplement = VectorCanBlockSupplement.Clone(mdf);
             return cheB;
         }
     }

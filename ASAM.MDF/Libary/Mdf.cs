@@ -99,13 +99,9 @@
         public Mdf Clone()
         {
             var cloned = MemberwiseClone() as Mdf;
-            cloned.HDBlock = HDBlock?.Clone(cloned) as HeaderBlock;
-            cloned.DataGroups = DataGroups?.Clone(cloned);
-            cloned.IDBlock = IDBlock?.Clone(cloned);
-            
-            cloned.data = new byte[data.Length];
-            data.CopyTo(cloned.data, 0);
-
+            cloned.HDBlock = HDBlock.Clone(cloned) as HeaderBlock;
+            cloned.DataGroups = DataGroups.Clone(cloned);
+            cloned.IDBlock = IDBlock.Clone(cloned);
             return cloned;
         }
     }

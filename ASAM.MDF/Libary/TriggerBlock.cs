@@ -18,7 +18,7 @@ namespace ASAM.MDF.Libary
         public override Block Clone(Mdf mdf)
         {
             var tr = base.Clone(mdf) as TriggerBlock;
-            tr.Comment = Comment?.Clone(mdf) as TextBlock;
+            tr.Comment = Comment.Clone(mdf) as TextBlock;
 
             return tr;
         }
