@@ -2,7 +2,6 @@
 {
     using System;
     using System.IO;
-    using System.Reflection;
     using System.Text;
 
     using ASAM.MDF.Libary.Types;
@@ -319,20 +318,6 @@
             var bytesNextChannelLink = BitConverter.GetBytes(index);
 
             Array.Copy(bytesNextChannelLink, 0, array, blockIndex + 4, bytesNextChannelLink.Length);
-        }
-        public override Block Clone(Mdf mdf)
-        {
-            var Cb = base.Clone(mdf) as ChannelBlock;
-            Cb.ChannelConversion = ChannelConversion.Clone(mdf) as ChannelConversionBlock;
-            Cb.Comment = Comment.Clone(mdf) as TextBlock;
-            Cb.Dependency = Dependency.Clone(mdf) as ChannelDependencyBlock;
-            Cb.DisplayName = DisplayName.Clone(mdf) as TextBlock;
-            Cb.LongSignalName = LongSignalName.Clone(mdf) as TextBlock;
-            Cb.next = next.Clone(mdf) as ChannelBlock;
-            Cb.SourceDepending = SourceDepending.Clone(mdf) as ChannelExtensionBlock;
-            Cb.Unit = Unit.Clone(mdf) as TextBlock;
-
-            return Cb;
         }
     }
 }

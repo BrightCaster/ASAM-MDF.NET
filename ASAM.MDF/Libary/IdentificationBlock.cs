@@ -238,12 +238,5 @@
         {
             return Encoding.UTF8.GetString(mdf.Data, mdf.AdvanceIndex(count), (int)count);
         }
-
-        public IdentificationBlock Clone(Mdf mdf)
-        {
-            var iB = MemberwiseClone() as IdentificationBlock;
-            iB.Mdf = mdf;
-            return iB;
-        }
     }
 }

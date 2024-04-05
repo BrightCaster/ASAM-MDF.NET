@@ -65,10 +65,5 @@ namespace ASAM.MDF.Libary
                 Mdf.data[k] = trData;
             }
         }
-        public override Block Clone(Mdf mdf)
-        {
-            var dz = base.Clone(mdf) as DataZippedBlock;
-            return dz;
-        }
     }
 }

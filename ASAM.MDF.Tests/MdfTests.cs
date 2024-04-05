@@ -14,45 +14,6 @@
     public class MdfTests
     {
         [Test]
-        public void Test()
-        {
-            var filename = "C:\\Users\\Михаил\\Desktop\\Работа\\EU.dat";
-            var bytes = File.ReadAllBytes(filename);
-            var mdf = new Mdf(bytes);
-            var cloned = mdf.Clone();
-
-            CheckHashCodes(mdf, cloned);
-        }
-
-        private void CheckHashCodes(Mdf mdf, Mdf cloned)
-        {
-            var listMdf = RecursiveObjectData(mdf);
-            var listCloned = RecursiveObjectData(cloned);
-
-
-        }
-        private List<object> RecursiveObjectData(object value, List<object> list = null)
-        {
-            if (list ==null)
-                list = new List<object>();
-
-            var type = value.GetType();
-            var fields = type.GetFields();
-            var properties = type.GetProperties();
-            foreach ( var prop in properties )
-            {
-                list.Add(prop);
-                list = RecursiveObjectData(prop, list);
-            }
-            foreach ( var field in fields)
-            {
-                list.Add(field);
-                list = RecursiveObjectData(field, list);
-            }
-            return list;
-        }
-
-        [Test]
         public void BaseWriteReadTest()
         {
             var idBlockByteOrder = ByteOrder.LittleEndian;

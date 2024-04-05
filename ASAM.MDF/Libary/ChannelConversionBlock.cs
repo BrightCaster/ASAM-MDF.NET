@@ -3,7 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.IO;
-    using System.Reflection.Metadata.Ecma335;
+
     using ASAM.MDF.Libary.Types;
 
     public class ChannelConversionBlock : Block
@@ -146,28 +146,6 @@
             }
 
             index += GetSize();
-        }
-        public override Block Clone(Mdf mdf)
-        {
-            var cc = base.Clone(mdf) as ChannelConversionBlock;
-            cc.AdditionalConversionData = AdditionalConversionData.Clone(mdf) as ConversionData;
-            cc.ConversionName = ConversionName.Clone(mdf) as TextBlock;
-            cc.ConversionUnit = ConversionUnit.Clone(mdf) as TextBlock;
-            cc.FileComment = FileComment.Clone(mdf) as TextBlock;
-            var tabT = new List<TextBlock>();
-            foreach (TextBlock tb in cc.ConvTabT)
-            {
-                tabT.Add(tb.Clone(mdf) as TextBlock);
-            }
-            cc.ConvTabT = tabT;
-            var tabTValue = new List<double>();
-            foreach (double tb in cc.ConvTabTValue)
-            {
-                tabTValue.Add(tb);
-            }
-            cc.ConvTabTValue = tabTValue;
-
-            return cc;
         }
     }
 }

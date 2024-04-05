@@ -97,12 +97,5 @@
             Size = Mdf.ReadU64();
             LinksCount = Mdf.ReadU64();
         }
-
-        public virtual Block Clone(Mdf mdf)
-        {
-            var block = MemberwiseClone() as Block;
-            block.Mdf = mdf;
-            return block;
-        }
     }
 }

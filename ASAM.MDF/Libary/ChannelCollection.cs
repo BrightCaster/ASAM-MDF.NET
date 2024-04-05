@@ -101,18 +101,5 @@
         {
             throw new NotImplementedException();
         }
-        public ChannelCollection Clone(Mdf mdf)
-        {
-            var Cc = MemberwiseClone() as ChannelCollection;
-            var list = new List<ChannelBlock>();
-
-            foreach (var item in items) 
-            {
-                list.Add(item.Clone(mdf) as ChannelBlock);
-            }
-            Cc.items = list;
-            Cc.Mdf = mdf;
-            return Cc;
-        }
     }
 }

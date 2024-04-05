@@ -82,19 +82,5 @@ namespace ASAM.MDF.Libary
         {
             throw new NotImplementedException();
         }
-        public DataListCollection Clone(Mdf mdf)
-        {
-            var dlc = MemberwiseClone() as DataListCollection;
-            var list = new List<DataList>();
-            foreach ( DataList item in this.items )
-            {
-                list.Add(item.Clone(mdf) as DataList);
-            }
-            dlc.items = list;
-            dlc.Mdf = mdf;
-            dlc.DataGroupBlock = DataGroupBlock.Clone(mdf) as DataGroupBlock;
-
-            return dlc;
-        }
     }
 }

@@ -186,15 +186,5 @@
 
             Array.Copy(bytesNextChannelGroupBlockLink, 0, array, blockIndex + 4, bytesNextChannelGroupBlockLink.Length);
         }
-        public override Block Clone(Mdf mdf)
-        {
-            var cgb = base.Clone(mdf) as ChannelGroupBlock;
-            cgb.Channels = Channels.Clone(mdf);
-            cgb.next = next.Clone(mdf) as ChannelGroupBlock;
-            cgb.Comment = Comment.Clone(mdf) as TextBlock;
-            cgb.TextName = TextName.Clone(mdf) as TextBlock;
-
-            return cgb;
-        }
     }
 }

@@ -21,10 +21,5 @@ namespace ASAM.MDF.Libary
             NameOfMessage = Encoding.GetEncoding(mdf.IDBlock.CodePage).GetString(data, 8, 36);
             NameOfSender = Encoding.GetEncoding(mdf.IDBlock.CodePage).GetString(data, 44, 36);
         }
-
-        internal VectorCanBlockSupplement Clone(Mdf mdf)
-        {
-            return MemberwiseClone() as VectorCanBlockSupplement;
-        }
     }
 }
