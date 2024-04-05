@@ -26,7 +26,7 @@
         }
 
         public Mdf Mdf { get; private set; }
-
+        [NonSerialize]
         public Encoding Encoding { get; private set; }
 
         /// <summary>

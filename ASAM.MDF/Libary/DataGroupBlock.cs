@@ -294,14 +294,14 @@
         public override Block Clone(Mdf mdf)
         {
             var dt = base.Clone(mdf) as DataGroupBlock;
-            dt.ChannelGroups = ChannelGroups.Clone(mdf);
-            dt.nextBlock = nextBlock.Clone(mdf) as DataGroupBlock;
-            dt.DataListColl = DataListColl.Clone(mdf);
-            dt.DataZipped=DataZipped.Clone(mdf) as DataZippedBlock;
-            dt.FileComment = FileComment.Clone(mdf) as TextBlock;
-            dt.Trigger = Trigger.Clone(mdf) as TriggerBlock;
+            dt.ChannelGroups = ChannelGroups?.Clone(mdf);
+            dt.nextBlock = Next?.Clone(mdf) as DataGroupBlock;
+            dt.DataListColl = DataListColl?.Clone(mdf);
+            dt.DataZipped = DataZipped?.Clone(mdf) as DataZippedBlock;
+            dt.FileComment = FileComment?.Clone(mdf) as TextBlock;
+            dt.Trigger = Trigger?.Clone(mdf) as TriggerBlock;
 
-            return base.Clone(mdf);
+            return dt;
         }
     }
 }

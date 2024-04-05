@@ -55,8 +55,8 @@
         public override Block Clone(Mdf mdf)
         {
             var dl = base.Clone(mdf) as DataList;
-            dl.DataBlock = DataBlock.Clone(mdf) as DataBlock;
-            dl.nextBlock = nextBlock.Clone(mdf) as DataList;
+            dl.DataBlock = DataBlock?.Clone(mdf) as DataBlock;
+            dl.nextBlock = nextBlock?.Clone(mdf) as DataList;
 
             return dl;
         }

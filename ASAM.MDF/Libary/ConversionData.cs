@@ -130,7 +130,7 @@
         public object Clone(Mdf mdf)
         {
             var c = MemberwiseClone() as ConversionData;
-            c.Parent = Parent.Clone(mdf) as ChannelConversionBlock;
+            //c.Parent = Parent?.Clone(mdf) as ChannelConversionBlock;
             return c;
         }
     }

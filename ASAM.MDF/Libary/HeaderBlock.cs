@@ -385,6 +385,7 @@
             var hd = base.Clone(mdf) as HeaderBlock;
             hd.FileComment = FileComment?.Clone(mdf) as TextBlock;
             hd.ProgramBlock = ProgramBlock?.Clone(mdf) as ProgramBlock;
+
             return hd;
         }
     }

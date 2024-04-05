@@ -86,13 +86,13 @@ namespace ASAM.MDF.Libary
         {
             var dlc = MemberwiseClone() as DataListCollection;
             var list = new List<DataList>();
-            foreach ( DataList item in this.items )
+            foreach ( DataList item in items )
             {
                 list.Add(item.Clone(mdf) as DataList);
             }
             dlc.items = list;
             dlc.Mdf = mdf;
-            dlc.DataGroupBlock = DataGroupBlock.Clone(mdf) as DataGroupBlock;
+            //dlc.DataGroupBlock = DataGroupBlock?.Clone(mdf) as DataGroupBlock;
 
             return dlc;
         }
