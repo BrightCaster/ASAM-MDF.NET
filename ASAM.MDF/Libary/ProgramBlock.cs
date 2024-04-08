@@ -58,7 +58,7 @@
 
         internal override ushort GetSize()
         {
-            return (ushort)(4 + Data.Length);
+            return (ushort)((int)Size + Data.Length);
         }
         internal override void Write(byte[] array, ref int index)
         {

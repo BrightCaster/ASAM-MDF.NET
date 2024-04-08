@@ -28,6 +28,7 @@
         public Mdf Mdf { get; private set; }
 
         public Encoding Encoding { get; private set; }
+        public int Size { get; set; }
 
         /// <summary>
         /// The file identifier always contains "MDF". ("MDF" followed by five spaces)
@@ -167,6 +168,7 @@
         public static IdentificationBlock Read(Mdf mdf)
         {
             var block = new IdentificationBlock();
+            var prevPos = mdf.position;
 
             block.Mdf = mdf;
             block.fileIdentifier = GetString(mdf, 8).Humanize();
@@ -178,13 +180,14 @@
             block.CodePage = mdf.ReadU16();
             block.reserved1 = GetString(mdf, 2).Humanize();
             block.reserved2 = GetString(mdf, 30).Humanize();
+            block.Size  = (int)(mdf.position - prevPos);
 
             return block;
         }
 
         internal int GetSize()
         {
-            return 64;
+            return Size;
         }
         internal void Write(byte[] array, ref int index)
         {

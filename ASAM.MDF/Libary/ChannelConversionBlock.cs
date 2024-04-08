@@ -114,7 +114,7 @@
 
         internal override ushort GetSize()
         {
-            ushort size = 46;
+            ushort size = (ushort)Size;
 
             if (AdditionalConversionData.Data != null)
                 size += (ushort)AdditionalConversionData.Data.Length;

@@ -4,7 +4,7 @@
     using System.Collections.Generic;
     using System.IO;
 
-    public class DataGroupBlock : Block, INext<DataGroupBlock>
+    public class DataGroupBlock : Block, INext<DataGroupBlock>, IPrevious<DataGroupBlock>
     {
         private DataGroupBlock nextBlock;
         private ulong ptrNextDataGroup;
@@ -30,6 +30,7 @@
                 return nextBlock;
             }
         }
+        public DataGroupBlock Previous { get; set; }
         public ChannelGroupCollection ChannelGroups { get; private set; }
         public DataListCollection DataListColl { get; private set; }
         public TriggerBlock Trigger { get; set; }
@@ -218,10 +219,6 @@
             return recordsList.ToArray();
         }
 
-        internal override ushort GetSize()
-        {
-            return 28;
-        }
         internal override int GetSizeTotal()
         {
             var size = base.GetSizeTotal();

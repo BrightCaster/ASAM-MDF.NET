@@ -2,12 +2,15 @@
 {
     using System;
     using System.IO;
+    using System.Linq;
     using System.Text;
 
     using ASAM.MDF.Libary.Types;
 
-    public class ChannelBlock : Block, INext<ChannelBlock>
+    public class ChannelBlock : Block, INext<ChannelBlock>, IPrevious<ChannelBlock>
     {
+        public delegate void ChanelHandlerRemovedAddress(ChannelBlock block, byte[] bytes);
+
         private const int MIN_VERSION_LONG_SIGNAL_NAME = 212;
         private const int MIN_VERSION_DISPLAY_NAME = 300;
         private const int MIN_VERSION_ADDITIONAL_BYTE_OFFSET = 300;
@@ -39,6 +42,7 @@
         private ChannelBlock(Mdf mdf) : base(mdf)
         {
         }
+        public event ChanelHandlerRemovedAddress ChanelsRemovedAddress;
 
         public ChannelBlock Next
         {
@@ -50,6 +54,8 @@
                 return next;
             }
         }
+        public Action<ChannelBlock> Action { get; set; }
+        public ChannelBlock Previous { get; set; }
         public ChannelConversionBlock ChannelConversion
         {
             get
@@ -233,25 +239,36 @@
             if (block.channelConversion == null && block.ptrChannelConversionBlock != 0)
                 block.ChannelConversion = ChannelConversionBlock.Read(block.Mdf, block.ptrChannelConversionBlock);
         }
+        /// <summary>
+        /// Set this address 0 for previous channel. Lost address
+        /// </summary>
+        /// <returns>Copied modified the entire array of mdf bytes</returns>
+        public byte[] Remove()
+        {
+            var bytes = new byte[Mdf.Data.Length];
+            Array.Copy(Mdf.Data, bytes, Mdf.Data.Length);
+
+            var previous = Previous;
+            var blockPrevAddress = previous.BlockAddress;
+            var thisPointer = blockPrevAddress + 4;
+
+            var newbytes = BitConverter.GetBytes((int)ptrNextChannelBlock);
+            Array.Copy(newbytes, 0, bytes, (int)thisPointer, newbytes.Length);
+            Array.Copy(new byte[(int)Size - 4 - newbytes.Length], 0, bytes, (int)BlockAddress + 4 + newbytes.Length, (int)Size - 4 - newbytes.Length);
+
+            previous.ptrNextChannelBlock = ptrNextChannelBlock;
+            previous.next = next;
+
+            ChanelsRemovedAddress?.Invoke(this, bytes);
+
+            return bytes.ToArray();
+        }
 
         public override string ToString()
         {
             return SignalName;
         }
 
-        internal override ushort GetSize()
-        {
-            // Base size.
-            if (Mdf.IDBlock.Version < 212)
-                return 218;
-
-            // 2.12
-            if (Mdf.IDBlock.Version < 300)
-                return 222;
-
-            // 3.00
-            return 228;
-        }
         internal override int GetSizeTotal()
         {
             var size = base.GetSizeTotal();

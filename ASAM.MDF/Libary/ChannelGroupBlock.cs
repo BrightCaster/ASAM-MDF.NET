@@ -3,7 +3,7 @@
     using System;
     using System.IO;
 
-    public class ChannelGroupBlock : Block, INext<ChannelGroupBlock>
+    public class ChannelGroupBlock : Block, INext<ChannelGroupBlock>, IPrevious<ChannelGroupBlock>
     {
         private ulong ptrNextChannelGroup;
         private ulong ptrFirstChannelBlock;
@@ -30,6 +30,7 @@
             }
         }
 
+        public ChannelGroupBlock Previous { get; set; }
         public ChannelCollection Channels { get; private set; }
         public TextBlock Comment { get; set; }
         public ulong RecordID { get; private set; }
@@ -90,8 +91,12 @@
                 block.TextName = TextBlock.Read(mdf, block.ptrTextName);
 
             if (block.ptrFirstChannelBlock != 0)
-                block.Channels.Read(ChannelBlock.Read(mdf, block.ptrFirstChannelBlock));
-
+            {
+                var chBlock = ChannelBlock.Read(mdf, block.ptrFirstChannelBlock);
+                chBlock.ChanelsRemovedAddress += (ch, bytes) => block.ChBlock_ChanelsRemovedAddress(ch,bytes);
+                
+                block.Channels.Read(chBlock, block.ChBlock_ChanelsRemovedAddress);
+            }
             //if (m_ptrFirstSampleReductionBlock != 0)
             //{
             //    mdf.Data.Position = m_ptrFirstSampleReductionBlock;
@@ -99,6 +104,14 @@
             //}
 
             return block;
+        }
+
+        private void ChBlock_ChanelsRemovedAddress(ChannelBlock block, byte[] bytes)
+        {
+            NumChannels -= 1;
+            var addressNumChannels = BlockAddress + 4 + 4/*ptrNextChannelGroup*/ + 4/*ptrFirstChannelBlock*/ + 4/*ptrTextBlock*/ + 2/*RecordID*/;
+            var newbytes = BitConverter.GetBytes(NumChannels);
+            Array.Copy(newbytes, 0, bytes, (int)addressNumChannels, newbytes.Length);
         }
 
         private static void ReadV4(Mdf mdf, ChannelGroupBlock block)
@@ -124,13 +137,9 @@
                 block.TextName = TextBlock.Read(mdf, block.ptrTextName);
 
             if (block.ptrFirstChannelBlock != 0)
-                block.Channels.Read(ChannelBlock.Read(mdf, block.ptrFirstChannelBlock));
+                block.Channels.Read(ChannelBlock.Read(mdf, block.ptrFirstChannelBlock), null);
         }
 
-        internal override ushort GetSize()
-        {
-            return 30;
-        }
         internal override int GetSizeTotal()
         {
             var size = base.GetSizeTotal();

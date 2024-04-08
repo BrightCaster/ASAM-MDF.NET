@@ -62,14 +62,14 @@
             var block = new TextBlock(mdf);
             block.Read();
 
-            block.Text = mdf.GetString(block.Size - mdf.position + block.BlockAddress);
+            block.Text = mdf.GetString(block.Size - (mdf.position - block.BlockAddress));
 
             return block;
         }
 
         internal override ushort GetSize()
         {
-            return (ushort)(4 + Text.Length);
+            return (ushort)((int)Size + Text.Length);
         }
         internal override void Write(byte[] array, ref int index)
         {

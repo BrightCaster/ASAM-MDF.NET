@@ -22,14 +22,14 @@
         public string Identifier { get; protected set; }
         [MdfVersion(400, 0)]
         public uint Reserved { get; set; }
-        public ulong Size { get; private set; }
+        public ulong Size { get; protected set; }
         [MdfVersion(400, 0)]
         public ulong LinksCount { get; private set; }
         public ulong BlockAddress { get; private set; }
 
         internal virtual ushort GetSize()
         {
-            return 0;
+            return (ushort)Size;
         }
         internal virtual int GetSizeTotal()
         {
@@ -45,9 +45,6 @@
             }
             Identifier = Mdf.GetString(2); // blockaddress = 0
             Size = Mdf.ReadU16();
-
-            if (Size <= 4)
-                throw new FormatException();
         }
         internal virtual void Write(byte[] array, ref int index)
         {

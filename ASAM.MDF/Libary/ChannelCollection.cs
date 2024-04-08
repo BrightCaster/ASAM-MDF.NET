@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
 
     public class ChannelCollection : IList<ChannelBlock>
     {
@@ -35,9 +36,13 @@
             }
         }
 
-        internal void Read(ChannelBlock cnBlock)
+        internal void Read(ChannelBlock cnBlock, ChannelBlock.ChanelHandlerRemovedAddress action)
         {
             items = Common.BuildBlockList(null, cnBlock);
+            foreach (var item in items)
+            {
+                item.ChanelsRemovedAddress += (ch, bytes) => action(ch, bytes);
+            }
         }
         internal void Write(byte[] array, ref int index)
         {

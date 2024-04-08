@@ -1,6 +1,8 @@
-﻿namespace ASAM.MDF.Libary
+﻿using System;
+
+namespace ASAM.MDF.Libary
 {
-    public class DataList : Block, INext<DataList>
+    public class DataList : Block, INext<DataList>, IPrevious<DataList>
     {
         private ulong ptrNextDL;
 
@@ -26,6 +28,7 @@
                 return nextBlock;
             }
         }
+        public DataList Previous { get; set; }
 
         public DataBlock DataBlock { get; private set; }
 
