@@ -52,9 +52,9 @@
             return "{TXBLOCK: " + Text + "}";
         }
 
-        internal static TextBlock Read(Mdf mdf, ulong position)
+        internal static TextBlock Read(Mdf mdf, int position)
         {
-            if ((ulong)mdf.Data.Length < position)
+            if (mdf.Data.Length < position)
                 return null;
 
             mdf.UpdatePosition(position);
@@ -62,7 +62,7 @@
             var block = new TextBlock(mdf);
             block.Read();
 
-            block.Text = mdf.GetString(block.Size - (mdf.position - block.BlockAddress));
+            block.Text = mdf.GetString((int)block.Size - (mdf.position - block.BlockAddress));
 
             return block;
         }

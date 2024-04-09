@@ -22,8 +22,7 @@
         /// <param name="mdf">The MDF.</param>
         /// <exception cref="System.FormatException"></exception>
         private HeaderBlock(Mdf mdf) : base(mdf)
-        {
-        }
+        { }
 
         [MdfVersion(400, 0)]
         public ulong StartTimeNs { get; set; }
@@ -216,62 +215,61 @@
         internal static HeaderBlock Read(Mdf mdf)
         {
             var block = new HeaderBlock(mdf);
+
             block.Read();
-            if (mdf.IDBlock.Version >= 400)
-            {
-                ReadV4(mdf, block);
-                return block;
-            }
-
-            block.ptrFirstDataGroup = mdf.ReadU32().ValidateAddress(mdf);
-            block.ptrTextBlock = mdf.ReadU32().ValidateAddress(mdf);
-            block.ptrProgramBlock = mdf.ReadU32().ValidateAddress(mdf);
-
-            block.DataGroupsCount = mdf.ReadU16();
-
-            block.Date = mdf.GetString(10);
-            block.Time = mdf.GetString(8);
-            block.Author = mdf.GetString(32);
-            block.Organization = mdf.GetString(32);
-            block.Project = mdf.GetString(32);
-            block.Subject = mdf.GetString(32);
-
-            if (mdf.IDBlock.Version == 320)
-            {
-                block.TimeStamp = mdf.ReadU64();
-                block.UTCTimeOffset = mdf.Read16();
-                block.TimeQuality = (TimeQuality)mdf.ReadU16();
-                block.TimerIdentification = mdf.GetString(32);
-            }
-            else
-            {
-                block.TimeStamp = 0;
-                block.UTCTimeOffset = 0;
-                block.TimeQuality = 0;
-                block.TimerIdentification = "";
-            }
-
-            // Check if ptrTextBlock is null
-            if (block.ptrTextBlock != 0)
-            {
-                block.FileComment = TextBlock.Read(mdf, block.ptrTextBlock);
-            }
-
-            // Check if ptrProgramBlock is null
-            if (block.ptrProgramBlock != 0)
-            {
-                block.ProgramBlock = ProgramBlock.Read(mdf, block.ptrProgramBlock);
-            }
-
-            // Check if ptrFirstDataGroup is null
-            if (block.ptrFirstDataGroup != 0)
-            {
-                mdf.DataGroups.Read(DataGroupBlock.Read(mdf, block.ptrFirstDataGroup));
-            }
-
             return block;
         }
 
+        internal override void ReadV23()
+        {
+            base.ReadV23();
+
+            ptrFirstDataGroup = Mdf.ReadU32().ValidateAddress(Mdf);
+            ptrTextBlock = Mdf.ReadU32().ValidateAddress(Mdf);
+            ptrProgramBlock = Mdf.ReadU32().ValidateAddress(Mdf);
+
+            DataGroupsCount = Mdf.ReadU16();
+
+            Date = Mdf.GetString(10);
+            Time = Mdf.GetString(8);
+            Author = Mdf.GetString(32);
+            Organization = Mdf.GetString(32);
+            Project = Mdf.GetString(32);
+            Subject = Mdf.GetString(32);
+
+            if (Mdf.IDBlock.Version == 320)
+            {
+                TimeStamp = Mdf.ReadU64();
+                UTCTimeOffset = Mdf.Read16();
+                TimeQuality = (TimeQuality)Mdf.ReadU16();
+                TimerIdentification = Mdf.GetString(32);
+            }
+            else
+            {
+                TimeStamp = 0;
+                UTCTimeOffset = 0;
+                TimeQuality = 0;
+                TimerIdentification = "";
+            }
+
+            // Check if ptrTextBlock is null
+            if (ptrTextBlock != 0)
+            {
+                FileComment = TextBlock.Read(Mdf, (int)ptrTextBlock);
+            }
+
+            // Check if ptrProgramBlock is null
+            if (ptrProgramBlock != 0)
+            {
+                ProgramBlock = ProgramBlock.Read(Mdf, (int)ptrProgramBlock);
+            }
+
+            // Check if ptrFirstDataGroup is null
+            if (ptrFirstDataGroup != 0)
+            {
+                Mdf.DataGroups.Read(DataGroupBlock.Read(Mdf, (int)ptrFirstDataGroup));
+            }
+        }
 
         internal override int GetSizeTotal()
         {
@@ -340,37 +338,38 @@
 
             ProgramBlock.Write(array, ref index);
         }
-        private static void ReadV4(Mdf mdf, HeaderBlock block)
+        internal override void ReadV4()
         {
+            base.ReadV4();
 
-            block.ptrFirstDataGroup = mdf.ReadU64().ValidateAddress(mdf); //Adress DataGroup
+            ptrFirstDataGroup = Mdf.ReadU64().ValidateAddress(Mdf); //Adress DataGroup
                                                //skiped: FileHistoryBlock (not used) +8
                                                //skiped: Chanel... (not used)        +8
                                                //skiped: AttachmentBlock (not used)  +8
                                                //skiped: EventBlock (not used)       +8
-            ulong skippedCount = 8 * 4;
-            mdf.UpdatePosition(mdf.position + skippedCount);
+            var skippedCount = 8 * 4;
+            Mdf.UpdatePosition(Mdf.position + skippedCount);
 
-            block.ptrTextBlock = mdf.ReadU64().ValidateAddress(mdf);
-            block.StartTimeNs = mdf.ReadU64();
-            block.TimeZoneOffsetMinutes = mdf.Read16();
-            block.DstOffsetMinutes = mdf.Read16();
-            block.TimeFlags = mdf.ReadByte();
-            block.TimeClass = mdf.ReadByte();
-            block.Flags = mdf.ReadByte();
-            block.Reserved1 = mdf.ReadByte();
-            block.StartAngle = mdf.ReadDouble();
-            block.StartDistance = mdf.ReadDouble();
+            ptrTextBlock = Mdf.ReadU64().ValidateAddress(Mdf);
+            StartTimeNs = Mdf.ReadU64();
+            TimeZoneOffsetMinutes = Mdf.Read16();
+            DstOffsetMinutes = Mdf.Read16();
+            TimeFlags = Mdf.ReadByte();
+            TimeClass = Mdf.ReadByte();
+            Flags = Mdf.ReadByte();
+            Reserved1 = Mdf.ReadByte();
+            StartAngle = Mdf.ReadDouble();
+            StartDistance = Mdf.ReadDouble();
 
-            if (block.ptrTextBlock != 0)
+            if (ptrTextBlock != 0)
             {
-                block.FileComment = TextBlock.Read(mdf, block.ptrTextBlock);
+                FileComment = TextBlock.Read(Mdf, (int)ptrTextBlock);
             }
 
             // Check if ptrFirstDataGroup is null
-            if (block.ptrFirstDataGroup != 0)
+            if (ptrFirstDataGroup != 0)
             {
-                mdf.DataGroups.Read(DataGroupBlock.Read(mdf, block.ptrFirstDataGroup));
+                Mdf.DataGroups.Read(DataGroupBlock.Read(Mdf, (int)ptrFirstDataGroup));
             }
         }
     }

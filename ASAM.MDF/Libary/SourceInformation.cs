@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace ASAM.MDF.Libary
+﻿namespace ASAM.MDF.Libary
 {
     public class SourceInformation : Block
     {
@@ -23,31 +17,35 @@ namespace ASAM.MDF.Libary
         public SourceInformation(Mdf mdf) : base(mdf)
         { }
 
-        public static SourceInformation Read(Mdf mdf, ulong position)
+        public static SourceInformation Read(Mdf mdf, int position)
         {
             mdf.UpdatePosition(position);
 
             var block = new SourceInformation(mdf);
+
             block.Read();
-
-            block.ptrTextName = mdf.ReadU64();
-            block.ptrTextPath = mdf.ReadU64();
-            block.ptrTextComment = mdf.ReadU64();
-            block.SourceType = mdf.ReadByte();
-            block.BusType = mdf.ReadByte();
-            block.SiFlags = mdf.ReadByte();
-            block.Reserved1 = mdf.ReadByte();
-
-            if (block.ptrTextComment != 0)
-                block.FileComment = TextBlock.Read(mdf, block.ptrTextComment);
-
-            if (block.ptrTextName != 0)
-                block.TextBlockName = TextBlock.Read(mdf, block.ptrTextName);
-
-            if (block.ptrTextPath != 0)
-                block.TextBlockPath = TextBlock.Read(mdf, block.ptrTextPath);
-
             return block;
+        }
+        internal override void ReadV4()
+        {
+            base.ReadV4();
+
+           ptrTextName = Mdf.ReadU64().ValidateAddress(Mdf);
+           ptrTextPath = Mdf.ReadU64().ValidateAddress(Mdf);
+           ptrTextComment = Mdf.ReadU64().ValidateAddress(Mdf);
+           SourceType = Mdf.ReadByte();
+           BusType = Mdf.ReadByte();
+           SiFlags = Mdf.ReadByte();
+           Reserved1 = Mdf.ReadByte();
+
+            if (ptrTextComment != 0)
+               FileComment = TextBlock.Read(Mdf, (int)ptrTextComment);
+
+            if (ptrTextName != 0)
+               TextBlockName = TextBlock.Read(Mdf, (int)ptrTextName);
+
+            if (ptrTextPath != 0)
+               TextBlockPath = TextBlock.Read(Mdf, (int)ptrTextPath);
         }
     }
 }

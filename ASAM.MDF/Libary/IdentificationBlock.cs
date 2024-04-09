@@ -22,8 +22,7 @@
         private string reserved2;
 
         private IdentificationBlock()
-        {
-        }
+        { }
 
         public Mdf Mdf { get; private set; }
 
@@ -180,7 +179,7 @@
             block.CodePage = mdf.ReadU16();
             block.reserved1 = GetString(mdf, 2).Humanize();
             block.reserved2 = GetString(mdf, 30).Humanize();
-            block.Size  = (int)(mdf.position - prevPos);
+            block.Size  = mdf.position - prevPos;
 
             return block;
         }
@@ -237,9 +236,9 @@
                 target = value;
             }
         }
-        private static string GetString(Mdf mdf, ulong count)
+        private static string GetString(Mdf mdf, int count)
         {
-            return Encoding.UTF8.GetString(mdf.Data, mdf.AdvanceIndex(count), (int)count);
+            return Encoding.UTF8.GetString(mdf.Data, mdf.AdvanceIndex(count), count);
         }
     }
 }

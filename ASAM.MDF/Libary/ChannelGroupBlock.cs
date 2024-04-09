@@ -2,8 +2,9 @@
 {
     using System;
     using System.IO;
+    using System.Security.Cryptography;
 
-    public class ChannelGroupBlock : Block, INext<ChannelGroupBlock>, IPrevious<ChannelGroupBlock>
+    public class ChannelGroupBlock : Block, INext<ChannelGroupBlock>, IPrevious<ChannelGroupBlock>, IParent<DataGroupBlock>
     {
         private ulong ptrNextChannelGroup;
         private ulong ptrFirstChannelBlock;
@@ -17,6 +18,7 @@
 
         private ChannelGroupBlock(Mdf mdf) : base(mdf)
         {
+            Channels = new ChannelCollection(mdf, this);
         }
 
         public ChannelGroupBlock Next
@@ -24,7 +26,7 @@
             get
             {
                 if (next == null && ptrNextChannelGroup != 0)
-                    next = Read(Mdf, ptrNextChannelGroup);
+                    next = Read(Mdf, (int)ptrNextChannelGroup);
 
                 return next;
             }
@@ -36,8 +38,6 @@
         public ulong RecordID { get; private set; }
         public ulong CycleCount { get; private set; }
         public ushort Flags { get; private set; }
-
-
         public uint Reserved1 { get; private set; }
         public uint DataBytes { get; private set; }
         public uint InvalidBytes { get; private set; }
@@ -46,100 +46,109 @@
         public uint NumRecords { get; set; }
         public SampleReductionCollection SampleReductions { get; private set; }
         public TextBlock TextName { get; private set; }
+        DataGroupBlock IParent<DataGroupBlock>.Parent { get; set; }
 
         public static ChannelGroupBlock Create(Mdf mdf)
         {
-            return new ChannelGroupBlock(mdf)
-            {
-                Channels = new ChannelCollection(mdf),
-                Identifier = "CG",
-            };
+            return new ChannelGroupBlock(mdf) { Identifier = "CG" };
         }
 
-        internal static ChannelGroupBlock Read(Mdf mdf, ulong position)
+        internal static ChannelGroupBlock Read(Mdf mdf, int position)
         {
             mdf.UpdatePosition(position);
 
             var block = new ChannelGroupBlock(mdf);
-            block.Read();
-
             block.next = null;
-            block.Channels = new ChannelCollection(mdf);
             block.Comment = null;
             block.SampleReductions = null;
 
-            if (mdf.IDBlock.Version >= 400)
-            {
-                ReadV4(mdf, block);
-                return block;
-            }
-            block.ptrNextChannelGroup = mdf.ReadU32().ValidateAddress(mdf);
-            block.ptrFirstChannelBlock = mdf.ReadU32().ValidateAddress(mdf);
-            block.ptrTextBlock = mdf.ReadU32().ValidateAddress(mdf);
-            block.RecordID = mdf.ReadU16();
-            block.NumChannels = mdf.ReadU16();
-            block.RecordSize = mdf.ReadU16();
-            block.NumRecords = mdf.ReadU32();
-
-            if (block.Size >= 26)
-                block.ptrFirstSampleReductionBlock = mdf.ReadU32();
-
-            if (block.ptrTextBlock != 0)
-                block.Comment = TextBlock.Read(mdf, block.ptrTextBlock);
-
-            if (block.ptrTextName != 0)
-                block.TextName = TextBlock.Read(mdf, block.ptrTextName);
-
-            if (block.ptrFirstChannelBlock != 0)
-            {
-                var chBlock = ChannelBlock.Read(mdf, block.ptrFirstChannelBlock);
-                chBlock.ChanelsRemovedAddress += (ch, bytes) => block.ChBlock_ChanelsRemovedAddress(ch,bytes);
-                
-                block.Channels.Read(chBlock, block.ChBlock_ChanelsRemovedAddress);
-            }
-            //if (m_ptrFirstSampleReductionBlock != 0)
-            //{
-            //    mdf.Data.Position = m_ptrFirstSampleReductionBlock;
-            //    SampleReductions = new SampleReductionCollection(mdf, new SampleReductionBlock(mdf));
-            //}
+            block.Read();
 
             return block;
         }
+        internal override void ReadV23()
+        {
+            base.ReadV23();
 
+            ptrNextChannelGroup = Mdf.ReadU32().ValidateAddress(Mdf);
+            ptrFirstChannelBlock = Mdf.ReadU32().ValidateAddress(Mdf);
+            ptrTextBlock = Mdf.ReadU32().ValidateAddress(Mdf);
+            RecordID = Mdf.ReadU16();
+            NumChannels = Mdf.ReadU16();
+            RecordSize = Mdf.ReadU16();
+            NumRecords = Mdf.ReadU32();
+
+            if (Size >= 26)
+                ptrFirstSampleReductionBlock = Mdf.ReadU32();
+
+            if (ptrTextBlock != 0)
+                Comment = TextBlock.Read(Mdf, (int)ptrTextBlock);
+
+            if (ptrTextName != 0)
+                TextName = TextBlock.Read(Mdf, (int)ptrTextName);
+
+            if (ptrFirstChannelBlock != 0)
+            {
+                var chBlock = ChannelBlock.Read(Mdf, (int)ptrFirstChannelBlock);
+                chBlock.ChanelsRemovedAddress += (ch, bytes) => ChBlock_ChanelsRemovedAddress(ch, bytes);
+
+                Channels.Read(chBlock, ChBlock_ChanelsRemovedAddress);
+            }
+        }
+        internal override void ReadV4()
+        {
+            base.ReadV4();
+
+            ptrNextChannelGroup = Mdf.ReadU64().ValidateAddress(Mdf);
+            ptrFirstChannelBlock = Mdf.ReadU64().ValidateAddress(Mdf);
+            ptrTextName = Mdf.ReadU64().ValidateAddress(Mdf);
+            ptrSourceInfo = Mdf.ReadU64().ValidateAddress(Mdf);
+            ptrFirstSampleReductionBlock = Mdf.ReadU64().ValidateAddress(Mdf);
+            ptrTextBlock = Mdf.ReadU64().ValidateAddress(Mdf);
+            RecordID = Mdf.ReadU64();
+            CycleCount = Mdf.ReadU64();
+            Flags = Mdf.ReadU16();
+            pathSeparator = Mdf.ReadChar();
+            Reserved1 = Mdf.ReadU32();
+            DataBytes = Mdf.ReadU32();
+            InvalidBytes = Mdf.ReadU32();
+
+            if (ptrTextBlock != 0)
+                Comment = TextBlock.Read(Mdf, (int)ptrTextBlock);
+
+            if (ptrTextName != 0)
+                TextName = TextBlock.Read(Mdf, (int)ptrTextName);
+
+            if (ptrFirstChannelBlock != 0)
+                Channels.Read(ChannelBlock.Read(Mdf, (int)ptrFirstChannelBlock), null);
+        }
         private void ChBlock_ChanelsRemovedAddress(ChannelBlock block, byte[] bytes)
         {
+            if (Channels[0] == block) //change first channel address on channelGroup
+            {
+                var nextBlock = block.Next;
+                if (nextBlock == null)
+                    ptrFirstChannelBlock = 0;
+                else
+                    ptrFirstChannelBlock = (ulong)block.Next.BlockAddress;
+
+                var addressOfFirstChannel = BlockAddress + 4 + 4/*ptrNextChannelGroup*/;
+                var bytesFirstChannelAddress = BitConverter.GetBytes(ptrFirstChannelBlock);
+                Array.Copy(bytesFirstChannelAddress, 0, bytes, addressOfFirstChannel, bytesFirstChannelAddress.Length);
+            }
+            if (block.Previous == null && block.Next == null)
+            {
+                ptrFirstChannelBlock = 0;
+                var addressOfFirstChannel = BlockAddress + 4 + 4/*ptrNextChannelGroup*/;
+                var bytesFirstChannelAddress = BitConverter.GetBytes(ptrFirstChannelBlock);
+                Array.Copy(bytesFirstChannelAddress, 0, bytes, addressOfFirstChannel, bytesFirstChannelAddress.Length);
+            }
             NumChannels -= 1;
+
             var addressNumChannels = BlockAddress + 4 + 4/*ptrNextChannelGroup*/ + 4/*ptrFirstChannelBlock*/ + 4/*ptrTextBlock*/ + 2/*RecordID*/;
             var newbytes = BitConverter.GetBytes(NumChannels);
-            Array.Copy(newbytes, 0, bytes, (int)addressNumChannels, newbytes.Length);
+            Array.Copy(newbytes, 0, bytes, addressNumChannels, newbytes.Length);
         }
-
-        private static void ReadV4(Mdf mdf, ChannelGroupBlock block)
-        {
-            block.ptrNextChannelGroup = mdf.ReadU64().ValidateAddress(mdf);
-            block.ptrFirstChannelBlock = mdf.ReadU64().ValidateAddress(mdf);
-            block.ptrTextName = mdf.ReadU64().ValidateAddress(mdf);
-            block.ptrSourceInfo = mdf.ReadU64().ValidateAddress(mdf);
-            block.ptrFirstSampleReductionBlock = mdf.ReadU64().ValidateAddress(mdf);
-            block.ptrTextBlock = mdf.ReadU64().ValidateAddress(mdf);
-            block.RecordID = mdf.ReadU64();
-            block.CycleCount = mdf.ReadU64();
-            block.Flags = mdf.ReadU16();
-            block.pathSeparator = mdf.ReadChar();
-            block.Reserved1 = mdf.ReadU32();
-            block.DataBytes = mdf.ReadU32();
-            block.InvalidBytes = mdf.ReadU32();
-
-            if (block.ptrTextBlock != 0)
-                block.Comment = TextBlock.Read(mdf, block.ptrTextBlock);
-
-            if (block.ptrTextName != 0)
-                block.TextName = TextBlock.Read(mdf, block.ptrTextName);
-
-            if (block.ptrFirstChannelBlock != 0)
-                block.Channels.Read(ChannelBlock.Read(mdf, block.ptrFirstChannelBlock), null);
-        }
-
         internal override int GetSizeTotal()
         {
             var size = base.GetSizeTotal();

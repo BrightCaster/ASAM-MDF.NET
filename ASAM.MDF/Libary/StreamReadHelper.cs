@@ -16,7 +16,7 @@ namespace ASAM.MDF.Libary
         
         public static ushort ReadU16(this Mdf mdf)
         {
-            var value = BitConverter.ToUInt16(mdf.data, (int)mdf.position);
+            var value = BitConverter.ToUInt16(mdf.data, mdf.position);
 
             mdf.position += 2;
 
@@ -24,7 +24,7 @@ namespace ASAM.MDF.Libary
         }
         public static uint ReadU32(this Mdf mdf)
         {
-            var value = BitConverter.ToUInt32(mdf.data, (int)mdf.position);
+            var value = BitConverter.ToUInt32(mdf.data, mdf.position);
 
             mdf.position += 4;
 
@@ -32,7 +32,7 @@ namespace ASAM.MDF.Libary
         }
         public static ulong ReadU64(this Mdf mdf)
         {
-            var value = BitConverter.ToUInt64(mdf.data, (int)mdf.position);
+            var value = BitConverter.ToUInt64(mdf.data, mdf.position);
 
             mdf.position += 8;
 
@@ -40,7 +40,7 @@ namespace ASAM.MDF.Libary
         }
         public static short Read16(this Mdf mdf)
         {
-            var value = BitConverter.ToInt16(mdf.data, (int)mdf.position);
+            var value = BitConverter.ToInt16(mdf.data, mdf.position);
 
             mdf.position += 2;
 
@@ -48,7 +48,7 @@ namespace ASAM.MDF.Libary
         }
         public static int Read32(this Mdf mdf)
         {
-            var value = BitConverter.ToInt32(mdf.data, (int)mdf.position);
+            var value = BitConverter.ToInt32(mdf.data, mdf.position);
 
             mdf.position += 4;
 
@@ -56,7 +56,7 @@ namespace ASAM.MDF.Libary
         }
         public static long Read64(this Mdf mdf)
         {
-            var value = BitConverter.ToInt64(mdf.data, (int)mdf.position);
+            var value = BitConverter.ToInt64(mdf.data, mdf.position);
 
             mdf.position += 8;
 
@@ -64,7 +64,7 @@ namespace ASAM.MDF.Libary
         }
         public static char ReadChar(this Mdf mdf)
         {
-            var value = mdf.IDBlock.Encoding.GetString(mdf.data, (int)mdf.position, 2);
+            var value = mdf.IDBlock.Encoding.GetString(mdf.data, mdf.position, 2);
 
             mdf.position += 2;
 
@@ -74,7 +74,7 @@ namespace ASAM.MDF.Libary
 
         public static bool ReadBoolean(this Mdf mdf)
         {
-            var value = BitConverter.ToUInt16(mdf.Data, (int)mdf.position);
+            var value = BitConverter.ToUInt16(mdf.Data, mdf.position);
 
             mdf.position += 2;
 
@@ -82,7 +82,7 @@ namespace ASAM.MDF.Libary
         }
         public static double ReadDouble(this Mdf mdf)
         {
-            var value = BitConverter.ToDouble(mdf.Data, (int)mdf.position);
+            var value = BitConverter.ToDouble(mdf.Data, mdf.position);
 
             mdf.position += 8;
 
@@ -90,22 +90,22 @@ namespace ASAM.MDF.Libary
         }
 
 
-        public static void UpdatePosition(this Mdf mdf, ulong address)
+        public static void UpdatePosition(this Mdf mdf, int address)
         {
             mdf.position = address;
         }
-        public static int AdvanceIndex(this Mdf mdf, ulong count)
+        public static int AdvanceIndex(this Mdf mdf, int count)
         {
             var index = mdf.position;
 
             mdf.position += count;
 
-            return (int)index;
+            return index;
         }
 
-        public static string GetString(this Mdf mdf, ulong count)
+        public static string GetString(this Mdf mdf, int count)
         {
-            var value = mdf.IDBlock.Encoding.GetString(mdf.Data, mdf.AdvanceIndex(count), (int)count);
+            var value = mdf.IDBlock.Encoding.GetString(mdf.Data, mdf.AdvanceIndex(count), count);
             var indexLastSymbol = value.IndexOf('\0');
             if (indexLastSymbol != -1)
                 value = value.Remove(indexLastSymbol);

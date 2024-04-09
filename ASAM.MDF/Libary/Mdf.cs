@@ -1,11 +1,10 @@
 ﻿namespace ASAM.MDF.Libary
 {
     using System;
-    using System.IO;
 
     public class Mdf
     {
-        internal ulong position;
+        internal int position;
         internal byte[] data;
 
         /// <summary>
@@ -74,9 +73,9 @@
         {
             var value = new byte[recordSize];
 
-            Array.Copy(data, (int)position, value, 0, value.Length);
+            Array.Copy(data, position, value, 0, value.Length);
 
-            position += (ulong)value.Length;
+            position += value.Length;
 
             return value;
         }
@@ -90,10 +89,10 @@
 
             return value;
         }
-        internal string GetNameBlock(ulong position)
+        internal string GetNameBlock(int position)
         {
             var index = position + 2;
-            var name = IDBlock.Encoding.GetString(Data, (int)index, 2);
+            var name = IDBlock.Encoding.GetString(Data, index, 2);
             return name;
         }
     }

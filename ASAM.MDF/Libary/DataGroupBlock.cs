@@ -3,8 +3,9 @@
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using System.Security.Cryptography;
 
-    public class DataGroupBlock : Block, INext<DataGroupBlock>, IPrevious<DataGroupBlock>
+    public class DataGroupBlock : Block, INext<DataGroupBlock>, IPrevious<DataGroupBlock>, IParent<Mdf>
     {
         private DataGroupBlock nextBlock;
         private ulong ptrNextDataGroup;
@@ -25,7 +26,7 @@
             get
             {
                 if (nextBlock == null && ptrNextDataGroup != 0)
-                    nextBlock = Read(Mdf, ptrNextDataGroup);
+                    nextBlock = Read(Mdf, (int)ptrNextDataGroup);
 
                 return nextBlock;
             }
@@ -56,6 +57,7 @@
 
         public TextBlock FileComment { get; private set; }
         internal DataZippedBlock DataZipped { get; private set; }
+        public Mdf Parent { get; set; }
 
         //public uint Reserved { get; set; }
 
@@ -66,88 +68,84 @@
                 Identifier = "DG"
             };
         }
-        public static DataGroupBlock Read(Mdf mdf, ulong position)
+        public static DataGroupBlock Read(Mdf mdf, int position)
         {
             mdf.UpdatePosition(position);
 
             var block = new DataGroupBlock(mdf);
-            block.Read();
-
             block.nextBlock = null;
             block.Trigger = null;
             block.Reserved = 0;
 
-            if (mdf.IDBlock.Version >= 400)
-            {
-                ReadV4(mdf, block);
-                return block;
-            }
+            block.Read();
+            block.Records = block.ReadRecords();
 
-            block.ptrNextDataGroup = mdf.ReadU32().ValidateAddress(mdf);
-            block.ptrFirstChannelGroupBlock = mdf.ReadU32().ValidateAddress(mdf);
-            block.ptrTriggerBlock = mdf.ReadU32().ValidateAddress(mdf);
-            block.ptrDataBlock = mdf.ReadU32().ValidateAddress(mdf);
-            block.NumChannelGroups = mdf.ReadU16();
-            block.NumRecordIds = mdf.ReadU16();
+            return block;
+        }
+        internal override void ReadV23()
+        {
+            base.ReadV23();
 
-            if (block.Size >= 24)
-                block.Reserved = mdf.ReadU32();
+            ptrNextDataGroup = Mdf.ReadU32().ValidateAddress(Mdf);
+            ptrFirstChannelGroupBlock = Mdf.ReadU32().ValidateAddress(Mdf);
+            ptrTriggerBlock = Mdf.ReadU32().ValidateAddress(Mdf);
+            ptrDataBlock = Mdf.ReadU32().ValidateAddress(Mdf);
+            NumChannelGroups = Mdf.ReadU16();
+            NumRecordIds = Mdf.ReadU16();
+
+            if (Size >= 24)
+                Reserved = Mdf.ReadU32();
 
 
-            if (block.ptrTextBlock != 0)
-                block.FileComment = TextBlock.Read(mdf, block.ptrTextBlock);
+            if (ptrTextBlock != 0)
+                FileComment = TextBlock.Read(Mdf, (int)ptrTextBlock);
 
-            if (block.ptrFirstChannelGroupBlock != 0)
-                block.ChannelGroups.Read(ChannelGroupBlock.Read(mdf, block.ptrFirstChannelGroupBlock));
+            if (ptrFirstChannelGroupBlock != 0)
+                ChannelGroups.Read(ChannelGroupBlock.Read(Mdf, (int)ptrFirstChannelGroupBlock));
 
             /// TODO: Call Trigger Blocks
             //if (m_ptrTriggerBlock != 0)
             //{
             //    Mdf.Data.Position = m_ptrTriggerBlock;
-            //    Trigger = new TriggerBlock(mdf);
+            //    Trigger = new TriggerBlock(Mdf);
             //}
 
             /// TODO: Call ProgramsBlock ?
             //if (ptrProgramBlock != 0)
             //{
             //    Mdf.Data.Position = ptrProgramBlock;
-            //    ProgramBlock = new ProgramBlock(mdf);
+            //    ProgramBlock = new ProgramBlock(Mdf);
             //}
-
-            block.Records = block.ReadRecords();
-
-            return block;
         }
-
-        private static void ReadV4(Mdf mdf, DataGroupBlock block)
+        internal override void ReadV4()
         {
-            block.ptrNextDataGroup = mdf.ReadU64().ValidateAddress(mdf);
-            block.ptrFirstChannelGroupBlock = mdf.ReadU64().ValidateAddress(mdf);
-            block.ptrDataBlock = mdf.ReadU64().ValidateAddress(mdf);
-            block.ptrTextBlock = mdf.ReadU64().ValidateAddress(mdf);
-            block.NumRecordIds = mdf.ReadByte();
-            block.Reserved1 = mdf.ReadByte();
+            base.ReadV4();
 
-            if (block.ptrTextBlock != 0)
-                block.FileComment = TextBlock.Read(mdf, block.ptrTextBlock);
+            ptrNextDataGroup = Mdf.ReadU64().ValidateAddress(Mdf);
+            ptrFirstChannelGroupBlock = Mdf.ReadU64().ValidateAddress(Mdf);
+            ptrDataBlock = Mdf.ReadU64().ValidateAddress(Mdf);
+            ptrTextBlock = Mdf.ReadU64().ValidateAddress(Mdf);
+            NumRecordIds = Mdf.ReadByte();
+            Reserved1 = Mdf.ReadByte();
 
-            if (block.ptrFirstChannelGroupBlock != 0)
-                block.ChannelGroups.Read(ChannelGroupBlock.Read(mdf, block.ptrFirstChannelGroupBlock));
+            if (ptrTextBlock != 0)
+                FileComment = TextBlock.Read(Mdf, (int)ptrTextBlock);
 
-            if (block.ptrDataBlock != 0)
+            if (ptrFirstChannelGroupBlock != 0)
+                ChannelGroups.Read(ChannelGroupBlock.Read(Mdf, (int)ptrFirstChannelGroupBlock));
+
+            if (ptrDataBlock != 0)
             {
-                var indentificator = mdf.GetNameBlock(block.ptrDataBlock);
+                var indentificator = Mdf.GetNameBlock((int)ptrDataBlock);
 
                 if (indentificator == "DZ")
-                    block.DataZipped = DataZippedBlock.Read(mdf, block.ptrDataBlock);
+                    DataZipped = DataZippedBlock.Read(Mdf, (int)ptrDataBlock);
 
                 if (indentificator == "DL")
                 {
-                    block.DataListColl.Read(DataList.Read(mdf, block.ptrDataBlock));
+                    DataListColl.Read(DataList.Read(Mdf, (int)ptrDataBlock));
                 }
             }
-
-            block.Records = block.ReadRecords();
         }
 
         internal DataRecord[] ReadRecords()
@@ -155,7 +153,7 @@
             var recordsList = new List<DataRecord>();
             var dataList = new List<DataBlock>();
 
-            var indentificator = Mdf.GetNameBlock(ptrDataBlock);
+            var indentificator = Mdf.GetNameBlock((int)ptrDataBlock);
 
             if (indentificator == "DL")
             {
@@ -165,7 +163,7 @@
                 }
             }
 
-            Mdf.UpdatePosition(ptrDataBlock);
+            Mdf.UpdatePosition((int)ptrDataBlock);
 
             if (Mdf.IDBlock.Version >= 400)
             {

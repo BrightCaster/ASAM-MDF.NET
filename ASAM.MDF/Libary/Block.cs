@@ -25,7 +25,7 @@
         public ulong Size { get; protected set; }
         [MdfVersion(400, 0)]
         public ulong LinksCount { get; private set; }
-        public ulong BlockAddress { get; private set; }
+        public int BlockAddress { get; private set; }
 
         internal virtual ushort GetSize()
         {
@@ -35,17 +35,22 @@
         {
             return GetSize();
         }
-        internal void Read()
+        internal virtual void Read()
         {
             BlockAddress = Mdf.position;
+
             if (Mdf.IDBlock.Version >= 400)
-            {
                 ReadV4();
-                return;
-            }
+            else
+                ReadV23();
+        }
+
+        internal virtual void ReadV23()
+        {
             Identifier = Mdf.GetString(2); // blockaddress = 0
             Size = Mdf.ReadU16();
         }
+
         internal virtual void Write(byte[] array, ref int index)
         {
             var bytesIdentifier = Encoding.UTF8.GetBytes(Identifier);
@@ -86,7 +91,7 @@
 
             return (MdfVersionAttribute)Attribute.GetCustomAttribute(type.GetProperty(property), typeof(MdfVersionAttribute));
         }
-        private void ReadV4()
+        internal virtual void ReadV4()
         {
             IdHash = Mdf.ReadU16();
             Identifier = Mdf.GetString(2); // blockaddress = 0

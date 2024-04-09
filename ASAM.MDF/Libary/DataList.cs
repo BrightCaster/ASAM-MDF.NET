@@ -1,8 +1,9 @@
 ﻿using System;
+using System.Security.Cryptography;
 
 namespace ASAM.MDF.Libary
 {
-    public class DataList : Block, INext<DataList>, IPrevious<DataList>
+    public class DataList : Block, INext<DataList>, IPrevious<DataList>, IParent<DataGroupBlock>
     {
         private ulong ptrNextDL;
 
@@ -16,14 +17,14 @@ namespace ASAM.MDF.Libary
         public uint BlockCount { get; private set; }
         public long BlockOffset { get; private set; }
         public DataList(Mdf mdf) : base(mdf)
-        {
-        }
+        { }
+
         public DataList Next
         {
             get
             {
                 if (nextBlock == null && ptrNextDL != 0)
-                    nextBlock = Read(Mdf, ptrNextDL);
+                    nextBlock = Read(Mdf, (int)ptrNextDL);
 
                 return nextBlock;
             }
@@ -31,29 +32,34 @@ namespace ASAM.MDF.Libary
         public DataList Previous { get; set; }
 
         public DataBlock DataBlock { get; private set; }
+        public DataGroupBlock Parent { get; set; }
 
-        public static DataList Read(Mdf mdf, ulong position)
+        public static DataList Read(Mdf mdf, int position)
         {
             mdf.UpdatePosition(position);
 
             var block = new DataList(mdf);
             block.Read();
 
-            block.ptrNextDL = mdf.ReadU64();
-            block.DataBlockAddress = mdf.ReadU64();
-            block.Flags = (ListFlags)mdf.ReadU16();
-            block.Reserved1 = mdf.ReadU16();
-            block.BlockCount = mdf.ReadU32();
-
-            if (block.Flags == ListFlags.EqualLength)
-                block.ptrDataBlockLen = mdf.ReadU64();
-            else 
-                block.BlockOffset = mdf.Read64();
-
-            if (block.DataBlockAddress != 0)
-                block.DataBlock = DataBlock.Read(mdf, block.DataBlockAddress);
-
             return block;
+        }
+        internal override void ReadV4()
+        {
+            base.ReadV4();
+
+            ptrNextDL = Mdf.ReadU64();
+            DataBlockAddress = Mdf.ReadU64();
+            Flags = (ListFlags)Mdf.ReadU16();
+            Reserved1 = Mdf.ReadU16();
+            BlockCount = Mdf.ReadU32();
+
+            if (Flags == ListFlags.EqualLength)
+                ptrDataBlockLen = Mdf.ReadU64();
+            else
+                BlockOffset = Mdf.Read64();
+
+            if (DataBlockAddress != 0)
+                DataBlock = DataBlock.Read(Mdf, (int)DataBlockAddress);
         }
     }
 }

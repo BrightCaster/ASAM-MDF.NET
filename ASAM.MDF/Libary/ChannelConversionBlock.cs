@@ -3,7 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.IO;
-
+    using System.Security.Cryptography;
     using ASAM.MDF.Libary.Types;
 
     public class ChannelConversionBlock : Block
@@ -51,67 +51,78 @@
                 PhysicalUnit = "",
             };
         }
-        internal static ChannelConversionBlock Read(Mdf mdf, ulong position)
+        internal static ChannelConversionBlock Read(Mdf mdf, int position)
         {
             mdf.position = position;
 
             var block = new ChannelConversionBlock(mdf);
+
             block.Read();
-
-            if (mdf.IDBlock.Version >= 400)
-            {
-                
-                block.TextBlockName = mdf.ReadU64().ValidateAddress(mdf);
-                block.TextBlockUnit = mdf.ReadU64().ValidateAddress(mdf);
-                block.ptrFileComment = mdf.ReadU64().ValidateAddress(mdf);
-                block.InverseConversion = mdf.ReadU64();
-                var lastPosAddress = mdf.position;
-
-                if (block.LinksCount > 4)
-                    mdf.UpdatePosition(lastPosAddress + (block.LinksCount - 4) * 8);
-
-                block.ConversionType4 = (ConversionType4)mdf.ReadByte();
-                block.Precision = mdf.ReadByte();
-                block.Flags = mdf.ReadU16();
-                block.SizeInformation = mdf.ReadU16();
-                block.ValParamCount = mdf.ReadU16();
-                block.MinPhysicalValue = mdf.ReadDouble();
-                block.MaxPhysicalValue = mdf.ReadDouble();
-
-                block.indexPointer = (int)mdf.position;
-
-                block.AdditionalConversionData.Data = new byte[block.ValParamCount * 8];
-
-                Array.Copy(mdf.Data, block.indexPointer, block.AdditionalConversionData.Data, 0, block.AdditionalConversionData.Data.Length);
-            }
-            else
-            {
-                block.PhysicalValueRangeValid = mdf.Read16() != 0;
-                block.MinPhysicalValue = mdf.ReadDouble();
-                block.MaxPhysicalValue = mdf.ReadDouble();
-                block.PhysicalUnit = mdf.GetString(20);
-                block.ConversionType = (ConversionType)mdf.ReadU16();
-                block.SizeInformation = mdf.ReadU16();
-
-                if (block.SizeInformation > 0)
-                {
-                    block.AdditionalConversionData.Data = new byte[ConversionData.GetEstimatedParametersSize(block.ConversionType)];
-
-                    Array.Copy(mdf.Data, (int)mdf.position, block.AdditionalConversionData.Data, 0, block.AdditionalConversionData.Data.Length);
-                }
-            }
-            if (block.ptrFileComment != 0)
-                block.FileComment = TextBlock.Read(mdf, block.ptrFileComment);
-            
-            if (block.TextBlockName != 0)
-                block.ConversionName = TextBlock.Read(mdf, block.TextBlockName);
-            
-            if (block.TextBlockUnit != 0)
-                block.ConversionUnit = TextBlock.Read(mdf, block.TextBlockUnit);
-
             return block;
         }
 
+        internal override void ReadV23()
+        {
+            base.ReadV23();
+
+            PhysicalValueRangeValid = Mdf.Read16() != 0;
+            MinPhysicalValue = Mdf.ReadDouble();
+            MaxPhysicalValue = Mdf.ReadDouble();
+            PhysicalUnit = Mdf.GetString(20);
+            ConversionType = (ConversionType)Mdf.ReadU16();
+            SizeInformation = Mdf.ReadU16();
+
+            if (SizeInformation > 0)
+            {
+                AdditionalConversionData.Data = new byte[ConversionData.GetEstimatedParametersSize(ConversionType)];
+                Array.Copy(Mdf.Data, (int)Mdf.position, AdditionalConversionData.Data, 0, AdditionalConversionData.Data.Length);
+            }
+            if (ptrFileComment != 0)
+                FileComment = TextBlock.Read(Mdf, (int)ptrFileComment);
+
+            if (TextBlockName != 0)
+                ConversionName = TextBlock.Read(Mdf, (int)TextBlockName);
+
+            if (TextBlockUnit != 0)
+                ConversionUnit = TextBlock.Read(Mdf, (int)TextBlockUnit);
+        }
+
+        internal override void ReadV4()
+        {
+            base.ReadV4();
+
+            TextBlockName = Mdf.ReadU64().ValidateAddress(Mdf);
+            TextBlockUnit = Mdf.ReadU64().ValidateAddress(Mdf);
+            ptrFileComment = Mdf.ReadU64().ValidateAddress(Mdf);
+            InverseConversion = Mdf.ReadU64();
+            var lastPosAddress = Mdf.position;
+
+            if (LinksCount > 4)
+                Mdf.UpdatePosition(lastPosAddress + ((int)LinksCount - 4) * 8);
+
+            ConversionType4 = (ConversionType4)Mdf.ReadByte();
+            Precision = Mdf.ReadByte();
+            Flags = Mdf.ReadU16();
+            SizeInformation = Mdf.ReadU16();
+            ValParamCount = Mdf.ReadU16();
+            MinPhysicalValue = Mdf.ReadDouble();
+            MaxPhysicalValue = Mdf.ReadDouble();
+
+            indexPointer = (int)Mdf.position;
+
+            AdditionalConversionData.Data = new byte[ValParamCount * 8];
+
+            Array.Copy(Mdf.Data, indexPointer, AdditionalConversionData.Data, 0, AdditionalConversionData.Data.Length);
+
+            if (ptrFileComment != 0)
+                FileComment = TextBlock.Read(Mdf, (int)ptrFileComment);
+
+            if (TextBlockName != 0)
+                ConversionName = TextBlock.Read(Mdf, (int)TextBlockName);
+
+            if (TextBlockUnit != 0)
+                ConversionUnit = TextBlock.Read(Mdf, (int)TextBlockUnit);
+        }
         internal override ushort GetSize()
         {
             ushort size = (ushort)Size;

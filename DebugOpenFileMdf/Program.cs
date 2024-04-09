@@ -5,8 +5,9 @@ var filename = ShowDialog();
 try
 {
     var bytes = File.ReadAllBytes(filename);
+    var samebytes = new byte[0];
     var mdf = new Mdf(bytes);
-    var dest = mdf.DataGroups[0].ChannelGroups[0].Channels[2];
+    
     var list = new List<ChannelBlock>();
 
 
@@ -20,9 +21,24 @@ try
             {
                 var channelBlock = channelGroup.Channels[k];
                 list.Add(channelBlock);
-                if (channelBlock == dest)
+            }
+        }
+    }
+    list.RemoveAt(0);
+    for (int i = 0; i < mdf.DataGroups.Count; i++)
+    {
+        var group = mdf.DataGroups[i];
+        for (int j = 0; j < group.ChannelGroups.Count; j++)
+        {
+            var channelGroup = group.ChannelGroups[j];
+            for (int k = 0; k < channelGroup.Channels.Count; k++)
+            {
+                var channelBlock = channelGroup.Channels[k];
+                if (list.Contains(channelBlock))
                 {
-                    bytes = channelBlock.Remove();
+                    samebytes = channelBlock.Remove(samebytes);
+                    if (channelBlock.TypeV3 != ASAM.MDF.Libary.Types.ChannelTypeV3.Time)
+                        list.Remove(channelBlock);
                 }
             }
         }
@@ -31,7 +47,7 @@ try
     var ex = Path.GetExtension(filename);
     var file = Path.GetFileNameWithoutExtension(filename) + "Test";
     var path = Path.GetDirectoryName(filename) + "\\" + file + ex;
-    File.WriteAllBytes(path, bytes);
+    File.WriteAllBytes(path, samebytes);
 }
 catch (Exception e)
 {
