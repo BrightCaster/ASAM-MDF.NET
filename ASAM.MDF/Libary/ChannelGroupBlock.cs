@@ -6,14 +6,15 @@
 
     public class ChannelGroupBlock : Block, INext<ChannelGroupBlock>, IPrevious<ChannelGroupBlock>, IParent<DataGroupBlock>
     {
-        private ulong ptrNextChannelGroup;
-        private ulong ptrFirstChannelBlock;
-        private ulong ptrTextName;
-        private ulong ptrTextBlock;
-        private ulong ptrSourceInfo;
+        internal (ulong address, int offset) ptrNextChannelGroup;
+        internal (ulong address, int offset) ptrFirstChannelBlock;
+        internal (ulong address, int offset) ptrTextName;
+        internal (ulong address, int offset) ptrTextBlock;
+        internal (ulong address, int offset) ptrSourceInfo;
+        internal (ulong address, int offset) ptrFirstSampleReductionBlock;
+        
         private char pathSeparator;
 
-        private ulong ptrFirstSampleReductionBlock;
         private ChannelGroupBlock next;
 
         private ChannelGroupBlock(Mdf mdf) : base(mdf)
@@ -25,8 +26,8 @@
         {
             get
             {
-                if (next == null && ptrNextChannelGroup != 0)
-                    next = Read(Mdf, (int)ptrNextChannelGroup);
+                if (next == null && ptrNextChannelGroup.address != 0)
+                    next = Read(Mdf, (int)ptrNextChannelGroup.address);
 
                 return next;
             }
@@ -70,26 +71,26 @@
         {
             base.ReadV23();
 
-            ptrNextChannelGroup = Mdf.ReadU32().ValidateAddress(Mdf);
-            ptrFirstChannelBlock = Mdf.ReadU32().ValidateAddress(Mdf);
-            ptrTextBlock = Mdf.ReadU32().ValidateAddress(Mdf);
+            ptrNextChannelGroup = (Mdf.ReadU32().ValidateAddress(Mdf), 4);
+            ptrFirstChannelBlock = (Mdf.ReadU32().ValidateAddress(Mdf), ptrNextChannelGroup.offset + 4);
+            ptrTextBlock = (Mdf.ReadU32().ValidateAddress(Mdf), ptrFirstChannelBlock.offset + 4);
             RecordID = Mdf.ReadU16();
             NumChannels = Mdf.ReadU16();
             RecordSize = Mdf.ReadU16();
             NumRecords = Mdf.ReadU32();
 
             if (Size >= 26)
-                ptrFirstSampleReductionBlock = Mdf.ReadU32();
+                ptrFirstSampleReductionBlock = (Mdf.ReadU32().ValidateAddress(Mdf), ptrTextBlock.offset + 2 + 2 + 2 + 4);
 
-            if (ptrTextBlock != 0)
-                Comment = TextBlock.Read(Mdf, (int)ptrTextBlock);
+            if (ptrTextBlock.address != 0)
+                Comment = TextBlock.Read(Mdf, (int)ptrTextBlock.address);
 
-            if (ptrTextName != 0)
-                TextName = TextBlock.Read(Mdf, (int)ptrTextName);
+            if (ptrTextName.address != 0)
+                TextName = TextBlock.Read(Mdf, (int)ptrTextName.address);
 
-            if (ptrFirstChannelBlock != 0)
+            if (ptrFirstChannelBlock.address != 0)
             {
-                var chBlock = ChannelBlock.Read(Mdf, (int)ptrFirstChannelBlock);
+                var chBlock = ChannelBlock.Read(Mdf, (int)ptrFirstChannelBlock.address);
                 chBlock.ChanelsRemovedAddress += (ch, bytes) => ChBlock_ChanelsRemovedAddress(ch, bytes);
 
                 Channels.Read(chBlock, ChBlock_ChanelsRemovedAddress);
@@ -99,12 +100,12 @@
         {
             base.ReadV4();
 
-            ptrNextChannelGroup = Mdf.ReadU64().ValidateAddress(Mdf);
-            ptrFirstChannelBlock = Mdf.ReadU64().ValidateAddress(Mdf);
-            ptrTextName = Mdf.ReadU64().ValidateAddress(Mdf);
-            ptrSourceInfo = Mdf.ReadU64().ValidateAddress(Mdf);
-            ptrFirstSampleReductionBlock = Mdf.ReadU64().ValidateAddress(Mdf);
-            ptrTextBlock = Mdf.ReadU64().ValidateAddress(Mdf);
+            ptrNextChannelGroup = (Mdf.ReadU64().ValidateAddress(Mdf), 24);
+            ptrFirstChannelBlock = (Mdf.ReadU64().ValidateAddress(Mdf),ptrNextChannelGroup.offset + 8);
+            ptrTextName = (Mdf.ReadU64().ValidateAddress(Mdf), ptrFirstChannelBlock.offset + 8);
+            ptrSourceInfo = (Mdf.ReadU64().ValidateAddress(Mdf), ptrTextName.offset + 8);
+            ptrFirstSampleReductionBlock = (Mdf.ReadU64().ValidateAddress(Mdf), ptrSourceInfo.offset + 8);
+            ptrTextBlock = (Mdf.ReadU64().ValidateAddress(Mdf), ptrFirstSampleReductionBlock.offset + 8);
             RecordID = Mdf.ReadU64();
             CycleCount = Mdf.ReadU64();
             Flags = Mdf.ReadU16();
@@ -113,14 +114,14 @@
             DataBytes = Mdf.ReadU32();
             InvalidBytes = Mdf.ReadU32();
 
-            if (ptrTextBlock != 0)
-                Comment = TextBlock.Read(Mdf, (int)ptrTextBlock);
+            if (ptrTextBlock.address != 0)
+                Comment = TextBlock.Read(Mdf, (int)ptrTextBlock.address);
 
-            if (ptrTextName != 0)
-                TextName = TextBlock.Read(Mdf, (int)ptrTextName);
+            if (ptrTextName.address != 0)
+                TextName = TextBlock.Read(Mdf, (int)ptrTextName.address);
 
-            if (ptrFirstChannelBlock != 0)
-                Channels.Read(ChannelBlock.Read(Mdf, (int)ptrFirstChannelBlock), null);
+            if (ptrFirstChannelBlock.address != 0)
+                Channels.Read(ChannelBlock.Read(Mdf, (int)ptrFirstChannelBlock.address), null);
         }
         private void ChBlock_ChanelsRemovedAddress(ChannelBlock block, byte[] bytes)
         {
@@ -128,19 +129,19 @@
             {
                 var nextBlock = block.Next;
                 if (nextBlock == null)
-                    ptrFirstChannelBlock = 0;
+                    ptrFirstChannelBlock.address = 0;
                 else
-                    ptrFirstChannelBlock = (ulong)block.Next.BlockAddress;
+                    ptrFirstChannelBlock.address = (ulong)block.Next.BlockAddress;
 
                 var addressOfFirstChannel = BlockAddress + 4 + 4/*ptrNextChannelGroup*/;
-                var bytesFirstChannelAddress = BitConverter.GetBytes(ptrFirstChannelBlock);
+                var bytesFirstChannelAddress = BitConverter.GetBytes(ptrFirstChannelBlock.address);
                 Array.Copy(bytesFirstChannelAddress, 0, bytes, addressOfFirstChannel, bytesFirstChannelAddress.Length);
             }
             if (block.Previous == null && block.Next == null)
             {
-                ptrFirstChannelBlock = 0;
+                ptrFirstChannelBlock.address = 0;
                 var addressOfFirstChannel = BlockAddress + 4 + 4/*ptrNextChannelGroup*/;
-                var bytesFirstChannelAddress = BitConverter.GetBytes(ptrFirstChannelBlock);
+                var bytesFirstChannelAddress = BitConverter.GetBytes(ptrFirstChannelBlock.address);
                 Array.Copy(bytesFirstChannelAddress, 0, bytes, addressOfFirstChannel, bytesFirstChannelAddress.Length);
             }
             NumChannels -= 1;
@@ -203,6 +204,46 @@
             var bytesNextChannelGroupBlockLink = BitConverter.GetBytes(index);
 
             Array.Copy(bytesNextChannelGroupBlockLink, 0, array, blockIndex + 4, bytesNextChannelGroupBlockLink.Length);
+        }
+
+        internal void ChannelGroupUpdateAddress(int indexDeleted, byte[] bytes, ulong countDeleted)
+        {
+            if ((int)ptrFirstChannelBlock.address > indexDeleted)
+            {
+                ptrFirstChannelBlock.address -= countDeleted;
+
+                this.CopyAddress(ptrFirstChannelBlock, bytes);
+            }
+            if ((int)ptrFirstSampleReductionBlock.address > indexDeleted)
+            {
+                ptrFirstSampleReductionBlock.address -= countDeleted;
+
+                this.CopyAddress(ptrFirstSampleReductionBlock, bytes);
+            }
+            if ((int)ptrNextChannelGroup.address > indexDeleted)
+            {
+                ptrNextChannelGroup.address -= countDeleted;
+
+                this.CopyAddress(ptrNextChannelGroup, bytes);
+            }
+            if ((int)ptrSourceInfo.address > indexDeleted)
+            {
+                ptrSourceInfo.address -= countDeleted;
+
+                this.CopyAddress(ptrSourceInfo, bytes);
+            }
+            if ((int)ptrTextBlock.address > indexDeleted)
+            {
+                ptrTextBlock.address -= countDeleted;
+
+                this.CopyAddress(ptrTextBlock, bytes);
+            }
+            if ((int)ptrTextName.address > indexDeleted)
+            {
+                ptrTextName.address -= countDeleted;
+
+                this.CopyAddress(ptrTextName, bytes);
+            }
         }
     }
 }

@@ -5,9 +5,8 @@ namespace ASAM.MDF.Libary
 {
     public class DataList : Block, INext<DataList>, IPrevious<DataList>, IParent<DataGroupBlock>
     {
-        private ulong ptrNextDL;
-
-        public ulong DataBlockAddress { get; private set; }
+        internal (ulong address, int offset) ptrNextDL;
+        internal (ulong address, int offset) ptrDataBlockAddress;
 
         private ulong ptrDataBlockLen;
         private DataList nextBlock;
@@ -23,8 +22,8 @@ namespace ASAM.MDF.Libary
         {
             get
             {
-                if (nextBlock == null && ptrNextDL != 0)
-                    nextBlock = Read(Mdf, (int)ptrNextDL);
+                if (nextBlock == null && ptrNextDL.address != 0)
+                    nextBlock = Read(Mdf, (int)ptrNextDL.address);
 
                 return nextBlock;
             }
@@ -47,8 +46,8 @@ namespace ASAM.MDF.Libary
         {
             base.ReadV4();
 
-            ptrNextDL = Mdf.ReadU64();
-            DataBlockAddress = Mdf.ReadU64();
+            ptrNextDL = (Mdf.ReadU64().ValidateAddress(Mdf), 24);
+            ptrDataBlockAddress = (Mdf.ReadU64().ValidateAddress(Mdf),ptrNextDL.offset + 8);
             Flags = (ListFlags)Mdf.ReadU16();
             Reserved1 = Mdf.ReadU16();
             BlockCount = Mdf.ReadU32();
@@ -58,8 +57,8 @@ namespace ASAM.MDF.Libary
             else
                 BlockOffset = Mdf.Read64();
 
-            if (DataBlockAddress != 0)
-                DataBlock = DataBlock.Read(Mdf, (int)DataBlockAddress);
+            if (ptrDataBlockAddress.address != 0)
+                DataBlock = DataBlock.Read(Mdf, (int)ptrDataBlockAddress.address);
         }
     }
 }

@@ -2,9 +2,9 @@
 {
     public class SourceInformation : Block
     {
-        private ulong ptrTextName;
-        private ulong ptrTextPath;
-        private ulong ptrTextComment;
+        internal (ulong address, int offset) ptrTextName;
+        internal (ulong address, int offset) ptrTextPath;
+        internal (ulong address, int offset) ptrTextComment;
 
         public byte SourceType { get; private set; }
         public byte BusType { get; private set; }
@@ -30,22 +30,22 @@
         {
             base.ReadV4();
 
-           ptrTextName = Mdf.ReadU64().ValidateAddress(Mdf);
-           ptrTextPath = Mdf.ReadU64().ValidateAddress(Mdf);
-           ptrTextComment = Mdf.ReadU64().ValidateAddress(Mdf);
-           SourceType = Mdf.ReadByte();
-           BusType = Mdf.ReadByte();
-           SiFlags = Mdf.ReadByte();
-           Reserved1 = Mdf.ReadByte();
+            ptrTextName = (Mdf.ReadU64().ValidateAddress(Mdf), 24);
+            ptrTextPath = (Mdf.ReadU64().ValidateAddress(Mdf), ptrTextName.offset + 8);
+            ptrTextComment = (Mdf.ReadU64().ValidateAddress(Mdf), ptrTextPath.offset + 8);
+            SourceType = Mdf.ReadByte();
+            BusType = Mdf.ReadByte();
+            SiFlags = Mdf.ReadByte();
+            Reserved1 = Mdf.ReadByte();
 
-            if (ptrTextComment != 0)
-               FileComment = TextBlock.Read(Mdf, (int)ptrTextComment);
+             if (ptrTextComment.address != 0)
+                FileComment = TextBlock.Read(Mdf, (int)ptrTextComment.address);
 
-            if (ptrTextName != 0)
-               TextBlockName = TextBlock.Read(Mdf, (int)ptrTextName);
+             if (ptrTextName.address != 0)
+                TextBlockName = TextBlock.Read(Mdf, (int)ptrTextName.address);
 
-            if (ptrTextPath != 0)
-               TextBlockPath = TextBlock.Read(Mdf, (int)ptrTextPath);
+             if (ptrTextPath.address != 0)
+                TextBlockPath = TextBlock.Read(Mdf, (int)ptrTextPath.address);
         }
     }
 }

@@ -12,9 +12,9 @@
         private string subject;
         private string time;
         private string timerIdentification;
-        private ulong ptrFirstDataGroup;
-        private ulong ptrTextBlock;
-        private uint ptrProgramBlock;
+        internal (ulong address, int offest) ptrFirstDataGroup;
+        internal (ulong address, int offest) ptrTextBlock;
+        internal (ulong address, int offest) ptrProgramBlock;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="HeaderBlock" /> class.
@@ -224,9 +224,9 @@
         {
             base.ReadV23();
 
-            ptrFirstDataGroup = Mdf.ReadU32().ValidateAddress(Mdf);
-            ptrTextBlock = Mdf.ReadU32().ValidateAddress(Mdf);
-            ptrProgramBlock = Mdf.ReadU32().ValidateAddress(Mdf);
+            ptrFirstDataGroup = (Mdf.ReadU32().ValidateAddress(Mdf), 4);
+            ptrTextBlock = (Mdf.ReadU32().ValidateAddress(Mdf), ptrFirstDataGroup.offest + 4);
+            ptrProgramBlock = (Mdf.ReadU32().ValidateAddress(Mdf), ptrFirstDataGroup.offest + 4);
 
             DataGroupsCount = Mdf.ReadU16();
 
@@ -253,21 +253,21 @@
             }
 
             // Check if ptrTextBlock is null
-            if (ptrTextBlock != 0)
+            if (ptrTextBlock.address != 0)
             {
-                FileComment = TextBlock.Read(Mdf, (int)ptrTextBlock);
+                FileComment = TextBlock.Read(Mdf, (int)ptrTextBlock.address);
             }
 
             // Check if ptrProgramBlock is null
-            if (ptrProgramBlock != 0)
+            if (ptrProgramBlock.address != 0)
             {
-                ProgramBlock = ProgramBlock.Read(Mdf, (int)ptrProgramBlock);
+                ProgramBlock = ProgramBlock.Read(Mdf, (int)ptrProgramBlock.address);
             }
 
             // Check if ptrFirstDataGroup is null
-            if (ptrFirstDataGroup != 0)
+            if (ptrFirstDataGroup.address != 0)
             {
-                Mdf.DataGroups.Read(DataGroupBlock.Read(Mdf, (int)ptrFirstDataGroup));
+                Mdf.DataGroups.Read(DataGroupBlock.Read(Mdf, (int)ptrFirstDataGroup.address));
             }
         }
 
@@ -342,7 +342,7 @@
         {
             base.ReadV4();
 
-            ptrFirstDataGroup = Mdf.ReadU64().ValidateAddress(Mdf); //Adress DataGroup
+            ptrFirstDataGroup = (Mdf.ReadU64().ValidateAddress(Mdf), 24); //Adress DataGroup
                                                //skiped: FileHistoryBlock (not used) +8
                                                //skiped: Chanel... (not used)        +8
                                                //skiped: AttachmentBlock (not used)  +8
@@ -350,7 +350,7 @@
             var skippedCount = 8 * 4;
             Mdf.UpdatePosition(Mdf.position + skippedCount);
 
-            ptrTextBlock = Mdf.ReadU64().ValidateAddress(Mdf);
+            ptrTextBlock = (Mdf.ReadU64().ValidateAddress(Mdf), skippedCount + ptrFirstDataGroup.offest);
             StartTimeNs = Mdf.ReadU64();
             TimeZoneOffsetMinutes = Mdf.Read16();
             DstOffsetMinutes = Mdf.Read16();
@@ -361,15 +361,15 @@
             StartAngle = Mdf.ReadDouble();
             StartDistance = Mdf.ReadDouble();
 
-            if (ptrTextBlock != 0)
+            if (ptrTextBlock.address != 0)
             {
-                FileComment = TextBlock.Read(Mdf, (int)ptrTextBlock);
+                FileComment = TextBlock.Read(Mdf, (int)ptrTextBlock.address);
             }
 
             // Check if ptrFirstDataGroup is null
-            if (ptrFirstDataGroup != 0)
+            if (ptrFirstDataGroup.address != 0)
             {
-                Mdf.DataGroups.Read(DataGroupBlock.Read(Mdf, (int)ptrFirstDataGroup));
+                Mdf.DataGroups.Read(DataGroupBlock.Read(Mdf, (int)ptrFirstDataGroup.address));
             }
         }
     }

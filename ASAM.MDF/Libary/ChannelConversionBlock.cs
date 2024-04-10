@@ -8,7 +8,13 @@
 
     public class ChannelConversionBlock : Block
     {
+        internal (ulong address, int offset) ptrTextBlockName;
+        internal (ulong address, int offset) ptrTextBlockUnit;
+        internal (ulong address, int offset) ptrFileComment;
+        internal (ulong address, int offset) ptrInverseConversion;
+
         private string physicalUnit;
+        private int indexPointer;
 
         private ChannelConversionBlock(Mdf mdf) : base(mdf)
         {
@@ -30,13 +36,6 @@
         public ushort SizeInformation { get; private set; }
         public ushort ValParamCount { get; private set; }
         public ConversionData AdditionalConversionData { get; internal set; }
-        public ulong TextBlockName { get; private set; }
-        public ulong TextBlockUnit { get; private set; }
-
-        private ulong ptrFileComment;
-        private int indexPointer;
-
-        public ulong InverseConversion { get; private set; }
         public TextBlock FileComment { get; private set; }
         public TextBlock ConversionUnit { get; private set; }
         public TextBlock ConversionName { get; private set; }
@@ -75,26 +74,18 @@
             if (SizeInformation > 0)
             {
                 AdditionalConversionData.Data = new byte[ConversionData.GetEstimatedParametersSize(ConversionType)];
-                Array.Copy(Mdf.Data, (int)Mdf.position, AdditionalConversionData.Data, 0, AdditionalConversionData.Data.Length);
+                Array.Copy(Mdf.Data, Mdf.position, AdditionalConversionData.Data, 0, AdditionalConversionData.Data.Length);
             }
-            if (ptrFileComment != 0)
-                FileComment = TextBlock.Read(Mdf, (int)ptrFileComment);
-
-            if (TextBlockName != 0)
-                ConversionName = TextBlock.Read(Mdf, (int)TextBlockName);
-
-            if (TextBlockUnit != 0)
-                ConversionUnit = TextBlock.Read(Mdf, (int)TextBlockUnit);
         }
 
         internal override void ReadV4()
         {
             base.ReadV4();
 
-            TextBlockName = Mdf.ReadU64().ValidateAddress(Mdf);
-            TextBlockUnit = Mdf.ReadU64().ValidateAddress(Mdf);
-            ptrFileComment = Mdf.ReadU64().ValidateAddress(Mdf);
-            InverseConversion = Mdf.ReadU64();
+            ptrTextBlockName = (Mdf.ReadU64().ValidateAddress(Mdf), 24);
+            ptrTextBlockUnit = (Mdf.ReadU64().ValidateAddress(Mdf),ptrTextBlockName.offset + 8);
+            ptrFileComment = (Mdf.ReadU64().ValidateAddress(Mdf), ptrTextBlockUnit.offset + 8);
+            ptrInverseConversion = (Mdf.ReadU64().ValidateAddress(Mdf), ptrFileComment.offset + 8);
             var lastPosAddress = Mdf.position;
 
             if (LinksCount > 4)
@@ -114,14 +105,14 @@
 
             Array.Copy(Mdf.Data, indexPointer, AdditionalConversionData.Data, 0, AdditionalConversionData.Data.Length);
 
-            if (ptrFileComment != 0)
-                FileComment = TextBlock.Read(Mdf, (int)ptrFileComment);
+            if (ptrFileComment.address != 0)
+                FileComment = TextBlock.Read(Mdf, (int)ptrFileComment.address);
 
-            if (TextBlockName != 0)
-                ConversionName = TextBlock.Read(Mdf, (int)TextBlockName);
+            if (ptrTextBlockName.address != 0)
+                ConversionName = TextBlock.Read(Mdf, (int)ptrTextBlockName.address);
 
-            if (TextBlockUnit != 0)
-                ConversionUnit = TextBlock.Read(Mdf, (int)TextBlockUnit);
+            if (ptrTextBlockUnit.address != 0)
+                ConversionUnit = TextBlock.Read(Mdf, (int)ptrTextBlockUnit.address);
         }
         internal override ushort GetSize()
         {

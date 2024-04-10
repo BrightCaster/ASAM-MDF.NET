@@ -1,6 +1,7 @@
 ﻿namespace ASAM.MDF.Libary
 {
     using System;
+    using System.Linq;
 
     public class Mdf
     {
@@ -33,6 +34,36 @@
 
         internal byte[] Data => data;
 
+        public byte[] RemoveChannel(ChannelBlock[] channelBlocks)
+        {
+            var bytes = new byte[Data.Length];
+            Array.Copy(Data, bytes, Data.Length);
+
+            for (int i = 0; i < DataGroups.Count; i++)
+            {
+                var dataGroup = DataGroups[i];
+
+                for (int j = 0; j < dataGroup.ChannelGroups.Count; j++)
+                {
+                    var channelGroup = dataGroup.ChannelGroups[j];
+
+                    for (int k = 0; k < channelGroup.Channels.Count; k++)
+                    {
+                        var channel = channelGroup.Channels[k];
+
+                        if (channelBlocks.Contains(channel))
+                        {
+                            bytes = channel.Remove(bytes);
+                            
+                            UpdateAddresses(bytes, Data, channel.BlockAddress);
+                        }
+                    }
+                }
+            }
+
+            return bytes;
+        }
+
         public byte[] GetBytes()
         {
             var array = new byte[GetSize()];
@@ -54,6 +85,37 @@
             DataGroups.Write(array, ref index);
             
             return array;
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="prevDataBytes">None deleted data</param>
+        /// <param name="indexDeleted">Index start deleted on prevDataBytes</param>
+        internal void UpdateAddresses(byte[] data, byte[] prevDataBytes, int indexDeleted)
+        {
+            var bytes = data;
+            var countDeleted = (ulong)(prevDataBytes.Length - bytes.Length);
+            if (countDeleted == 0)
+                return;
+
+            for (int i = 0; i < DataGroups.Count; i++)
+            {
+                var dataGroup = DataGroups[i];
+
+                dataGroup.DataGroupUpdateAddress(indexDeleted, bytes, countDeleted);
+                for (int j = 0; j < dataGroup.ChannelGroups.Count; j++)
+                {
+                    var channelGroup = dataGroup.ChannelGroups[j];
+
+                    channelGroup.ChannelGroupUpdateAddress(indexDeleted, bytes, countDeleted);
+                    for (int k = 0; k < channelGroup.Channels.Count; k++)
+                    {
+                        var channel = channelGroup.Channels[k];
+
+                        channel.ChannelUpdateAddress(indexDeleted, bytes, countDeleted);
+                    }
+                }
+            }
         }
 
         internal int GetSize()
