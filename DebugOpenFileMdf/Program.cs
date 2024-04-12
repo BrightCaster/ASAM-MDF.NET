@@ -25,9 +25,12 @@ try
             }
         }
     }
-    samebytes = mdf.RemoveChannel(list.ToArray());
-
     list.Sort((x, y) => x.ToString().CompareTo(y.ToString()));
+    list.RemoveAt(1);
+
+    samebytes = mdf.RemoveChannel(list.ToArray());
+    var newmdf = new Mdf(samebytes);
+
     var ex = Path.GetExtension(filename);
     var file = Path.GetFileNameWithoutExtension(filename) + "Test";
     var path = Path.GetDirectoryName(filename) + "\\" + file + ex;

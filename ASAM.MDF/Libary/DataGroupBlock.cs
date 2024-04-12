@@ -5,11 +5,13 @@
 
     public class DataGroupBlock : Block, INext<DataGroupBlock>, IPrevious<DataGroupBlock>, IParent<Mdf>
     {
+        internal List<PointerAddress<uint>> listAddressesV23;
+        internal List<PointerAddress<ulong>> listAddressesV4;
+
         internal PointerAddress<uint> ptrNextDataGroup;
         internal PointerAddress<uint> ptrFirstChannelGroupBlock;
         internal PointerAddress<uint> ptrTriggerBlock;
         internal PointerAddress<uint> ptrDataBlock;
-        internal PointerAddress<uint> ptrTextBlock;
 
         internal PointerAddress<ulong> ptrNextDataGroupV4;
         internal PointerAddress<ulong> ptrFirstChannelGroupBlockV4;
@@ -30,13 +32,13 @@
         {
             get
             {
-                if (Mdf.IDBlock.Version >= 4)
-                    if (nextBlock == null && ptrNextDataGroup.address != 0)
-                        nextBlock = Read(Mdf, (int)ptrNextDataGroup.address);
-
-                if (Mdf.IDBlock.Version < 4)
-                    if (nextBlock == null && ptrNextDataGroupV4.address != 0)
+                if (Mdf.IDBlock.Version >= 400)
+                {
+                    if (nextBlock == null && ptrNextDataGroupV4 != null && ptrNextDataGroupV4?.address != 0)
                         nextBlock = Read(Mdf, (int)ptrNextDataGroupV4.address);
+                }
+                else if (nextBlock == null && ptrNextDataGroup != null && ptrNextDataGroup.address != 0)
+                    nextBlock = Read(Mdf, (int)ptrNextDataGroup.address);
 
                 return nextBlock;
             }
@@ -96,6 +98,8 @@
         {
             base.ReadV23();
 
+            listAddressesV23 = new List<PointerAddress<uint>>();
+
             ptrNextDataGroup = new PointerAddress<uint>(Mdf.ReadU32().ValidateAddress(Mdf), 4);
             ptrFirstChannelGroupBlock = new PointerAddress<uint>(Mdf.ReadU32().ValidateAddress(Mdf), ptrNextDataGroup.offset + 4);
             ptrTriggerBlock = new PointerAddress<uint>(Mdf.ReadU32().ValidateAddress(Mdf), ptrFirstChannelGroupBlock.offset + 4);
@@ -106,12 +110,16 @@
             if (Size >= 24)
                 Reserved = Mdf.ReadU32();
 
-
-            if (ptrTextBlock.address != 0)
-                FileComment = TextBlock.Read(Mdf, (int)ptrTextBlock.address);
-
             if (ptrFirstChannelGroupBlock.address != 0)
                 ChannelGroups.Read(ChannelGroupBlock.Read(Mdf, (int)ptrFirstChannelGroupBlock.address));
+
+            listAddressesV23.AddRange(new PointerAddress<uint>[]
+            {
+                ptrNextDataGroup,
+                ptrFirstChannelGroupBlock,
+                ptrTriggerBlock,
+                ptrDataBlock,
+            });
 
             /// TODO: Call Trigger Blocks
             //if (m_ptrTriggerBlock != 0)
@@ -130,6 +138,8 @@
         internal override void ReadV4()
         {
             base.ReadV4();
+
+            listAddressesV4 = new List<PointerAddress<ulong>>();
 
             ptrNextDataGroupV4 = new PointerAddress<ulong>(Mdf.ReadU64().ValidateAddress(Mdf), 24);
             ptrFirstChannelGroupBlockV4 = new PointerAddress<ulong>(Mdf.ReadU64().ValidateAddress(Mdf), ptrNextDataGroupV4.offset + 8);
@@ -156,6 +166,14 @@
                     DataListColl.Read(DataList.Read(Mdf, (int)ptrDataBlockV4.address));
                 }
             }
+
+            listAddressesV4.AddRange(new PointerAddress<ulong>[]
+            {
+                ptrNextDataGroupV4,
+                ptrDataBlockV4,
+                ptrFirstChannelGroupBlockV4,
+                ptrTextBlockV4,
+            });
         }
 
         internal DataRecord[] ReadRecords()
@@ -165,7 +183,7 @@
 
             var indentificator = Mdf.GetNameBlock((int)ptrDataBlock.address);
 
-            if (Mdf.IDBlock.Version >= 4)
+            if (Mdf.IDBlock.Version >= 400)
                 indentificator = Mdf.GetNameBlock((int)ptrDataBlockV4.address);
 
             if (indentificator == "DL")
@@ -178,7 +196,7 @@
 
             Mdf.UpdatePosition((int)ptrDataBlock.address);
 
-            if (Mdf.IDBlock.Version >= 4)
+            if (Mdf.IDBlock.Version >= 400)
                 Mdf.UpdatePosition((int)ptrDataBlockV4.address);//
 
             if (Mdf.IDBlock.Version >= 400)
@@ -305,35 +323,35 @@
 
         internal void DataGroupUpdateAddress(int indexDeleted, byte[] bytes, ulong countDeleted)
         {
-            if ((int)ptrDataBlock.address > indexDeleted)
-            {
-                ptrDataBlock.address -= countDeleted;
+            if (Mdf.IDBlock.Version >= 400)
+                DataGroupUpdateAddressV4(indexDeleted, bytes, countDeleted);
+            else
+                DataGroupUpdateAddressV23(indexDeleted, bytes, (uint)countDeleted);
+        }
 
-                this.CopyAddress(ptrDataBlock, bytes);
+        private void DataGroupUpdateAddressV23(int indexDeleted, byte[] bytes, uint countDeleted)
+        {
+            foreach (var ptr in listAddressesV23)
+            {
+                if ((int)ptr.address > indexDeleted)
+                {
+                    ptr.address -= countDeleted;
+
+                    this.CopyAddress(ptr, bytes);
+                }
             }
-            if ((int)ptrFirstChannelGroupBlock.address > indexDeleted)
-            {
-                ptrFirstChannelGroupBlock.address -= countDeleted;
+        }
 
-                this.CopyAddress(ptrFirstChannelGroupBlock, bytes);
-            }
-            if ((int)ptrNextDataGroup.address > indexDeleted)
+        private void DataGroupUpdateAddressV4(int indexDeleted, byte[] bytes, ulong countDeleted)
+        {
+            foreach (var ptr in listAddressesV4)
             {
-                ptrNextDataGroup.address -= countDeleted;
+                if ((int)ptr.address > indexDeleted)
+                {
+                    ptr.address -= countDeleted;
 
-                this.CopyAddress(ptrNextDataGroup, bytes);
-            }
-            if ((int)ptrTextBlock.address > indexDeleted)
-            {
-                ptrTextBlock.address -= countDeleted;
-
-                this.CopyAddress(ptrTextBlock, bytes);
-            }
-            if ((int)ptrTriggerBlock.address > indexDeleted)
-            {
-                ptrTriggerBlock.address -= countDeleted;
-
-                this.CopyAddress(ptrTriggerBlock, bytes);
+                    this.CopyAddress(ptr, bytes);
+                }
             }
         }
     }

@@ -3,11 +3,11 @@
     internal class PointerAddress<T> where T : struct
     {
         internal readonly int offset;
-        internal readonly T address;
+        internal T address;
 
         internal PointerAddress(T ptr, int offset)
         {
-            this.address = ptr;
+            address = ptr;
             this.offset = offset;
         }
     }

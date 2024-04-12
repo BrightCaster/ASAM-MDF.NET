@@ -8,10 +8,15 @@
 
     public class ChannelConversionBlock : Block
     {
-        internal (ulong address, int offset) ptrTextBlockName;
-        internal (ulong address, int offset) ptrTextBlockUnit;
-        internal (ulong address, int offset) ptrFileComment;
-        internal (ulong address, int offset) ptrInverseConversion;
+        internal PointerAddress<uint> ptrTextBlockName;
+        internal PointerAddress<uint> ptrTextBlockUnit;
+        internal PointerAddress<uint> ptrFileComment;
+        internal PointerAddress<uint> ptrInverseConversion;
+        
+        internal PointerAddress<ulong> ptrTextBlockNameV4;
+        internal PointerAddress<ulong> ptrTextBlockUnitV4;
+        internal PointerAddress<ulong> ptrFileCommentV4;
+        internal PointerAddress<ulong> ptrInverseConversionV4;
 
         private string physicalUnit;
         private int indexPointer;
@@ -82,10 +87,10 @@
         {
             base.ReadV4();
 
-            ptrTextBlockName = (Mdf.ReadU64().ValidateAddress(Mdf), 24);
-            ptrTextBlockUnit = (Mdf.ReadU64().ValidateAddress(Mdf),ptrTextBlockName.offset + 8);
-            ptrFileComment = (Mdf.ReadU64().ValidateAddress(Mdf), ptrTextBlockUnit.offset + 8);
-            ptrInverseConversion = (Mdf.ReadU64().ValidateAddress(Mdf), ptrFileComment.offset + 8);
+            ptrTextBlockNameV4 = new PointerAddress<ulong>(Mdf.ReadU64().ValidateAddress(Mdf), 24);
+            ptrTextBlockUnitV4 = new PointerAddress<ulong>(Mdf.ReadU64().ValidateAddress(Mdf),ptrTextBlockName.offset + 8);
+            ptrFileCommentV4 = new PointerAddress<ulong>(Mdf.ReadU64().ValidateAddress(Mdf), ptrTextBlockUnit.offset + 8);
+            ptrInverseConversionV4 = new PointerAddress<ulong>(Mdf.ReadU64().ValidateAddress(Mdf), ptrFileComment.offset + 8);
             var lastPosAddress = Mdf.position;
 
             if (LinksCount > 4)

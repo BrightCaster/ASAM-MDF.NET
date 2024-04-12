@@ -1,7 +1,7 @@
 ﻿namespace ASAM.MDF.Libary
 {
     using System;
-    using System.IO;
+    using System.Collections.Generic;
     using System.Linq;
 
     using ASAM.MDF.Libary.Types;
@@ -14,19 +14,36 @@
         private const int MIN_VERSION_DISPLAY_NAME = 300;
         private const int MIN_VERSION_ADDITIONAL_BYTE_OFFSET = 300;
 
-        internal (ulong address, int offset) ptrNextChannelBlock;
-        internal (ulong address, int offset) ptrChannelConversionBlock;
-        internal (ulong address, int offset) ptrDataBlockSignal;
-        internal (ulong address, int offset) ptrUnit;
-        internal (ulong address, int offset) ptrTextBlockComment;
-        internal (ulong address, int offset) ptrAttachment;
-        internal (ulong address, int offset) ptrChannelExtensionBlock;
-        internal (ulong address, int offset) ptrChannelDependencyBlock;
-        internal (ulong address, int offset) ptrChannelComment;
-        internal (ulong address, int offset) ptrLongSignalName;
-        internal (ulong address, int offset) ptrDisplayName;
-        internal (ulong address, int offset) ptrComponentAddress;
-        internal (ulong address, int offset) ptrTextBlockChanelName;
+        private List<PointerAddress<uint>> listAddressesV23;
+        private List<PointerAddress<ulong>> listAddressesV4;
+
+        internal PointerAddress<uint> ptrNextChannelBlock;
+        internal PointerAddress<uint> ptrChannelConversionBlock;
+        internal PointerAddress<uint> ptrDataBlockSignal;
+        internal PointerAddress<uint> ptrUnit;
+        internal PointerAddress<uint> ptrTextBlockComment;
+        internal PointerAddress<uint> ptrAttachment;
+        internal PointerAddress<uint> ptrChannelExtensionBlock;
+        internal PointerAddress<uint> ptrChannelDependencyBlock;
+        internal PointerAddress<uint> ptrChannelComment;
+        internal PointerAddress<uint> ptrLongSignalName;
+        internal PointerAddress<uint> ptrDisplayName;
+        internal PointerAddress<uint> ptrComponentAddress;
+        internal PointerAddress<uint> ptrTextBlockChanelName;
+
+        internal PointerAddress<ulong> ptrNextChannelBlockV4;
+        internal PointerAddress<ulong> ptrChannelConversionBlockV4;
+        internal PointerAddress<ulong> ptrDataBlockSignalV4;
+        internal PointerAddress<ulong> ptrUnitV4;
+        internal PointerAddress<ulong> ptrTextBlockCommentV4;
+        internal PointerAddress<ulong> ptrAttachmentV4;
+        internal PointerAddress<ulong> ptrChannelExtensionBlockV4;
+        internal PointerAddress<ulong> ptrChannelDependencyBlockV4;
+        internal PointerAddress<ulong> ptrChannelCommentV4;
+        internal PointerAddress<ulong> ptrLongSignalNameV4;
+        internal PointerAddress<ulong> ptrDisplayNameV4;
+        internal PointerAddress<ulong> ptrComponentAddressV4;
+        internal PointerAddress<ulong> ptrTextBlockChanelNameV4;
 
         private string signalName;
         private string signalDescription;
@@ -44,7 +61,12 @@
         {
             get
             {
-                if (next == null && ptrNextChannelBlock.address != 0 && ptrNextChannelBlock.address < (ulong)Mdf.Data.Length)
+                if (Mdf.IDBlock.Version >= 400)
+                {
+                    if (next == null && ptrNextChannelBlockV4 != null && ptrNextChannelBlockV4.address != 0 && ptrNextChannelBlockV4.address < (ulong)Mdf.Data.Length)
+                        next = Read(Mdf, (int)ptrNextChannelBlockV4.address);
+                }
+                else if (next == null && ptrNextChannelBlock != null && ptrNextChannelBlock.address != 0 && ptrNextChannelBlock.address < (uint)Mdf.Data.Length)
                     next = Read(Mdf, (int)ptrNextChannelBlock.address);
 
                 return next;
@@ -120,11 +142,13 @@
         {
             base.ReadV23();
 
-            ptrNextChannelBlock = (Mdf.ReadU32().ValidateAddress(Mdf), 4);
-            ptrChannelConversionBlock = (Mdf.ReadU32().ValidateAddress(Mdf),ptrNextChannelBlock.offset + 4);
-            ptrChannelExtensionBlock = (Mdf.ReadU32().ValidateAddress(Mdf),ptrChannelConversionBlock.offset + 4);
-            ptrChannelDependencyBlock = (Mdf.ReadU32().ValidateAddress(Mdf), ptrChannelExtensionBlock.offset + 4);
-            ptrChannelComment = (Mdf.ReadU32().ValidateAddress(Mdf),ptrChannelDependencyBlock.offset + 4);
+            listAddressesV23 = new List<PointerAddress<uint>>();
+
+            ptrNextChannelBlock = new PointerAddress<uint>(Mdf.ReadU32().ValidateAddress(Mdf), 4);
+            ptrChannelConversionBlock = new PointerAddress<uint>(Mdf.ReadU32().ValidateAddress(Mdf), ptrNextChannelBlock.offset + 4);
+            ptrChannelExtensionBlock = new PointerAddress<uint>(Mdf.ReadU32().ValidateAddress(Mdf), ptrChannelConversionBlock.offset + 4);
+            ptrChannelDependencyBlock = new PointerAddress<uint>(Mdf.ReadU32().ValidateAddress(Mdf), ptrChannelExtensionBlock.offset + 4);
+            ptrChannelComment = new PointerAddress<uint>(Mdf.ReadU32().ValidateAddress(Mdf), ptrChannelDependencyBlock.offset + 4);
             TypeV3 = (ChannelTypeV3)Mdf.ReadU16();
             SignalName = Mdf.GetString(32);
             SignalDescription = Mdf.GetString(128);
@@ -132,6 +156,15 @@
             NumberOfBits = Mdf.ReadU16();
             SignalTypeV3 = (SignalTypeV3)Mdf.ReadU16();
             ValueRange = Mdf.ReadBoolean();
+
+            listAddressesV23.AddRange(new PointerAddress<uint>[]
+            {
+                ptrNextChannelBlock,
+                ptrChannelConversionBlock,
+                ptrChannelExtensionBlock,
+                ptrChannelDependencyBlock,
+                ptrChannelComment
+            });
 
             if (ValueRange)
             {
@@ -147,25 +180,20 @@
             var offset = 2 + 32 + 128 + 2 + 2 + 2 + 2 + 16 + 8;
             if (Mdf.IDBlock.Version >= MIN_VERSION_LONG_SIGNAL_NAME)
             {
-                ptrLongSignalName = (Mdf.ReadU32().ValidateAddress(Mdf), ptrChannelComment.offset + offset);
-                offset += 8;
+                ptrLongSignalName = new PointerAddress<uint>(Mdf.ReadU32().ValidateAddress(Mdf), ptrChannelComment.offset + offset);
+                offset += 4;
+                listAddressesV23.Add(ptrLongSignalName);
+
             }
             if (Mdf.IDBlock.Version >= MIN_VERSION_DISPLAY_NAME)
-                ptrDisplayName = (Mdf.ReadU32().ValidateAddress(Mdf), ptrChannelComment.offset + offset);
-
+            {
+                ptrDisplayName = new PointerAddress<uint>(Mdf.ReadU32().ValidateAddress(Mdf), ptrChannelComment.offset + offset);
+                listAddressesV23.Add(ptrDisplayName);
+            }
             if (Mdf.IDBlock.Version >= MIN_VERSION_ADDITIONAL_BYTE_OFFSET)
                 AdditionalByteOffset = Mdf.ReadU16();
 
-            if (ptrTextBlockChanelName.address != 0)
-                LongSignalName = TextBlock.Read(Mdf, (int)ptrTextBlockChanelName.address);
-
-            if (ptrUnit.address != 0)
-                Unit = TextBlock.Read(Mdf, (int)ptrUnit.address);
-
-            if (ptrTextBlockComment.address != 0)
-                Comment = TextBlock.Read(Mdf, (int)ptrTextBlockComment.address);
-
-            if (ptrLongSignalName.address != 0)
+            if (ptrLongSignalName != null && ptrLongSignalName.address != 0)
                 LongSignalName = TextBlock.Read(Mdf, (int)ptrLongSignalName.address);
 
             if (channelConversion == null && ptrChannelConversionBlock.address != 0)
@@ -182,14 +210,16 @@
         {
             base.ReadV4();
 
-            ptrNextChannelBlock = (Mdf.ReadU64().ValidateAddress(Mdf), 24);
-            ptrComponentAddress = (Mdf.ReadU64().ValidateAddress(Mdf), ptrNextChannelBlock.offset + 8);
-            ptrTextBlockChanelName = (Mdf.ReadU64().ValidateAddress(Mdf), ptrComponentAddress.offset + 8);
-            ptrChannelExtensionBlock = (Mdf.ReadU64().ValidateAddress(Mdf), ptrTextBlockChanelName.offset + 8);
-            ptrChannelConversionBlock = (Mdf.ReadU64().ValidateAddress(Mdf), ptrChannelExtensionBlock.offset + 8);
-            ptrDataBlockSignal = (Mdf.ReadU64().ValidateAddress(Mdf), ptrChannelConversionBlock.offset + 8);
-            ptrUnit = (Mdf.ReadU64().ValidateAddress(Mdf), ptrDataBlockSignal.offset + 8);
-            ptrTextBlockComment = (Mdf.ReadU64().ValidateAddress(Mdf), ptrUnit.offset + 8);
+            listAddressesV4 = new List<PointerAddress<ulong>>();
+
+            ptrNextChannelBlockV4 = new PointerAddress<ulong>(Mdf.ReadU64().ValidateAddress(Mdf), 24);
+            ptrComponentAddressV4 = new PointerAddress<ulong>(Mdf.ReadU64().ValidateAddress(Mdf), ptrNextChannelBlockV4.offset + 8);
+            ptrTextBlockChanelNameV4 = new PointerAddress<ulong>(Mdf.ReadU64().ValidateAddress(Mdf), ptrComponentAddressV4.offset + 8);
+            ptrChannelExtensionBlockV4 = new PointerAddress<ulong>(Mdf.ReadU64().ValidateAddress(Mdf), ptrTextBlockChanelNameV4.offset + 8);
+            ptrChannelConversionBlockV4 = new PointerAddress<ulong>(Mdf.ReadU64().ValidateAddress(Mdf), ptrChannelExtensionBlockV4.offset + 8);
+            ptrDataBlockSignalV4 = new PointerAddress<ulong>(Mdf.ReadU64().ValidateAddress(Mdf), ptrChannelConversionBlockV4.offset + 8);
+            ptrUnitV4 = new PointerAddress<ulong>(Mdf.ReadU64().ValidateAddress(Mdf), ptrDataBlockSignalV4.offset + 8);
+            ptrTextBlockCommentV4 = new PointerAddress<ulong>(Mdf.ReadU64().ValidateAddress(Mdf), ptrUnitV4.offset + 8);
             //ptrAttachment = Mdf.ReadU64();
             //ptrDefaultDGBlock = Mdf.ReadU64();
             //ptrDefaultCGBlock = Mdf.ReadU64();
@@ -212,20 +242,32 @@
             LimitMinExt = Mdf.ReadDouble();
             LimitMaxExt = Mdf.ReadDouble();
 
-            if (ptrTextBlockChanelName.address != 0)
-                LongSignalName = TextBlock.Read(Mdf, (int)ptrTextBlockChanelName.address);
+            listAddressesV4.AddRange(new PointerAddress<ulong>[]
+            {
+                ptrNextChannelBlockV4,
+                ptrComponentAddressV4,
+                ptrTextBlockChanelNameV4,
+                ptrChannelExtensionBlockV4,
+                ptrChannelConversionBlockV4,
+                ptrDataBlockSignalV4,
+                ptrUnitV4,
+                ptrTextBlockCommentV4
+            });
 
-            if (ptrUnit.address != 0)
-                Unit = TextBlock.Read(Mdf, (int)ptrUnit.address);
+            if (ptrTextBlockChanelNameV4.address != 0)
+                LongSignalName = TextBlock.Read(Mdf, (int)ptrTextBlockChanelNameV4.address);
 
-            if (ptrTextBlockComment.address != 0)
-                Comment = TextBlock.Read(Mdf, (int)ptrTextBlockComment.address);
+            if (ptrUnitV4.address != 0)
+                Unit = TextBlock.Read(Mdf, (int)ptrUnitV4.address);
 
-            if (ptrLongSignalName.address != 0)
-                LongSignalName = TextBlock.Read(Mdf, (int)ptrLongSignalName.address);
+            if (ptrTextBlockCommentV4.address != 0)
+                Comment = TextBlock.Read(Mdf, (int)ptrTextBlockCommentV4.address);
 
-            if (channelConversion == null && ptrChannelConversionBlock.address != 0)
-                ChannelConversion = ChannelConversionBlock.Read(Mdf, (int)ptrChannelConversionBlock.address);
+            if (ptrLongSignalNameV4.address != 0)
+                LongSignalName = TextBlock.Read(Mdf, (int)ptrLongSignalNameV4.address);
+
+            if (channelConversion == null && ptrChannelConversionBlockV4.address != 0)
+                ChannelConversion = ChannelConversionBlock.Read(Mdf, (int)ptrChannelConversionBlockV4.address);
         }
         /// <summary>
         /// Set this address 0 for previous channel. Lost address
@@ -251,14 +293,12 @@
 
                 return bytes;
             }
-            var blockPrevAddress = previous.BlockAddress;
-            var thisPointer = blockPrevAddress + 4;
 
-            var newbytes = BitConverter.GetBytes((int)ptrNextChannelBlock.address);
-            Array.Copy(newbytes, 0, bytes, thisPointer, newbytes.Length);//changing the pointer to this block from the previous block, to the next of this block
-            //Array.Copy(new byte[(int)Size - 4 - newbytes.Length], 0, bytes, BlockAddress + 4 + newbytes.Length, (int)Size - 4 - newbytes.Length); //set empty(?) data after address of next block
+            if (Mdf.IDBlock.Version >= 400)
+                bytes = RemoveV4(bytes,previous);
+            else
+                bytes = RemoveV23(bytes, previous);
 
-            previous.ptrNextChannelBlock = ptrNextChannelBlock;
             previous.next = next;
 
             if (next != null)
@@ -266,9 +306,33 @@
 
             ChanelsRemovedAddress?.Invoke(this, bytes);
             
-            var removedBytes = bytes.Where((x, index) => index < BlockAddress || BlockAddress + (int)Size < index).ToArray();
-            Array.Copy(removedBytes, bytes, removedBytes.Length);
+            var removedBytes = bytes.Where((x, index) => index <= BlockAddress || BlockAddress + (int)Size < index).ToArray();
             Array.Resize(ref bytes, removedBytes.Length);
+            Array.Copy(removedBytes, bytes, removedBytes.Length);
+            return bytes;
+        }
+
+        private byte[] RemoveV23(byte[] bytes, ChannelBlock previous)
+        {
+            var thisPointer = BlockAddress + previous.ptrNextChannelBlock.offset;
+
+            var newbytes = BitConverter.GetBytes(ptrNextChannelBlock.address);
+            Array.Copy(newbytes, 0, bytes, thisPointer, newbytes.Length);//changing the pointer to this block from the previous block, to the next of this block
+
+            previous.ptrNextChannelBlock = ptrNextChannelBlock;
+
+            return bytes;
+        }
+
+        private byte[] RemoveV4(byte[] bytes, ChannelBlock previous)
+        {
+            var thisPointer = BlockAddress + previous.ptrNextChannelBlockV4.offset;
+
+            var newbytes = BitConverter.GetBytes(ptrNextChannelBlockV4.address);
+            Array.Copy(newbytes, 0, bytes, thisPointer, newbytes.Length);//changing the pointer to this block from the previous block, to the next of this block
+
+            previous.ptrNextChannelBlockV4 = ptrNextChannelBlockV4;
+
             return bytes;
         }
 
@@ -347,83 +411,35 @@
 
         internal void ChannelUpdateAddress(int indexDeleted, byte[] bytes, ulong countDeleted)
         {
-            if ((int)ptrAttachment.address > indexDeleted)
-            {
-                ptrAttachment.address -= countDeleted;
+            if (Mdf.IDBlock.Version >= 400)
+                ChannelUpdateAddressV4(indexDeleted,bytes, countDeleted);
+            else
+                ChannelUpdateAddressV23(indexDeleted, bytes, (uint)countDeleted);
+        }
 
-                this.CopyAddress(ptrAttachment, bytes);
+        private void ChannelUpdateAddressV23(int indexDeleted, byte[] bytes, uint countDeleted)
+        {
+            foreach (var ptr in listAddressesV23)
+            {
+                if ((int)ptr.address > indexDeleted)
+                {
+                    ptr.address -= countDeleted;
+
+                    this.CopyAddress(ptr, bytes);
+                }
             }
-            if ((int)ptrChannelComment.address > indexDeleted)
-            {
-                ptrChannelComment.address -= countDeleted;
+        }
 
-                this.CopyAddress(ptrChannelComment, bytes);
-            }
-            if ((int)ptrChannelConversionBlock.address > indexDeleted)
+        private void ChannelUpdateAddressV4(int indexDeleted, byte[] bytes, ulong countDeleted)
+        {
+            foreach (var ptr in listAddressesV4)
             {
-                ptrChannelConversionBlock.address -= countDeleted;
+                if ((int)ptr.address > indexDeleted)
+                {
+                    ptr.address -= countDeleted;
 
-                this.CopyAddress(ptrChannelConversionBlock, bytes);
-            }
-            if ((int)ptrChannelDependencyBlock.address > indexDeleted)
-            {
-                ptrChannelDependencyBlock.address -= countDeleted;
-
-                this.CopyAddress(ptrChannelDependencyBlock, bytes);
-            }
-            if ((int)ptrChannelExtensionBlock.address > indexDeleted)
-            {
-                ptrChannelExtensionBlock.address -= countDeleted;
-
-                this.CopyAddress(ptrChannelExtensionBlock, bytes);
-            }
-            if ((int)ptrComponentAddress.address > indexDeleted)
-            {
-                ptrComponentAddress.address -= countDeleted;
-
-                this.CopyAddress(ptrComponentAddress, bytes);
-            }
-            if ((int)ptrDataBlockSignal.address > indexDeleted)
-            {
-                ptrDataBlockSignal.address -= countDeleted;
-
-                this.CopyAddress(ptrDataBlockSignal, bytes);
-            }
-            if ((int)ptrDisplayName.address > indexDeleted)
-            {
-                ptrDisplayName.address -= countDeleted;
-
-                this.CopyAddress(ptrDisplayName, bytes);
-            }
-            if ((int)ptrLongSignalName.address > indexDeleted)
-            {
-                ptrLongSignalName.address -= countDeleted;
-
-                this.CopyAddress(ptrLongSignalName, bytes);
-            }
-            if ((int)ptrNextChannelBlock.address > indexDeleted)
-            {
-                ptrNextChannelBlock.address -= countDeleted;
-
-                this.CopyAddress(ptrNextChannelBlock, bytes);
-            }
-            if ((int)ptrTextBlockChanelName.address > indexDeleted)
-            {
-                ptrTextBlockChanelName.address -= countDeleted;
-
-                this.CopyAddress(ptrTextBlockChanelName, bytes);
-            }
-            if ((int)ptrTextBlockComment.address > indexDeleted)
-            {
-                ptrTextBlockComment.address -= countDeleted;
-
-                this.CopyAddress(ptrTextBlockComment, bytes);
-            }
-            if ((int)ptrUnit.address > indexDeleted)
-            {
-                ptrUnit.address -= countDeleted;
-
-                this.CopyAddress(ptrUnit, bytes);
+                    this.CopyAddress(ptr, bytes);
+                }
             }
         }
     }
