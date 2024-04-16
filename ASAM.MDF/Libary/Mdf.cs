@@ -1,6 +1,7 @@
 ﻿namespace ASAM.MDF.Libary
 {
     using System;
+    using System.Collections.Generic;
     using System.Linq;
 
     public class Mdf
@@ -36,12 +37,14 @@
 
         public byte[] RemoveChannel(ChannelBlock[] channelBlocks)
         {
-            var bytes = new byte[Data.Length];
-            Array.Copy(Data, bytes, Data.Length);
+            //var bytes = new byte[Data.Length];
+            var bytes = new List<byte>(Data);
+            var copiedMDF = new Mdf(bytes.ToArray());
+            var BlockAddresses = channelBlocks.Select(x => x.BlockAddress);
 
-            for (int i = 0; i < DataGroups.Count; i++)
+            for (int i = 0; i < copiedMDF.DataGroups.Count; i++)
             {
-                var dataGroup = DataGroups[i];
+                var dataGroup = copiedMDF.DataGroups[i];
 
                 for (int j = 0; j < dataGroup.ChannelGroups.Count; j++)
                 {
@@ -51,17 +54,13 @@
                     {
                         var channel = channelGroup.Channels[k];
 
-                        if (channelBlocks.Contains(channel))
-                        {
+                        if (BlockAddresses.Contains(channel.BlockAddress))
                             bytes = channel.Remove(bytes);
-                            
-                            UpdateAddresses(bytes, Data, channel.BlockAddress);
-                        }
                     }
                 }
             }
 
-            return bytes;
+            return bytes.ToArray();
         }
 
         public byte[] GetBytes()
@@ -91,10 +90,9 @@
         /// </summary>
         /// <param name="prevDataBytes">None deleted data</param>
         /// <param name="indexDeleted">Index start deleted on prevDataBytes</param>
-        internal void UpdateAddresses(byte[] data, byte[] prevDataBytes, int indexDeleted)
+        internal void UpdateAddresses(List<byte> data, ulong countDeleted, int indexDeleted)
         {
             var bytes = data;
-            var countDeleted = (ulong)(prevDataBytes.Length - bytes.Length);
             if (countDeleted == 0)
                 return;
 

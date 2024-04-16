@@ -25,11 +25,25 @@ try
             }
         }
     }
-    list.Sort((x, y) => x.ToString().CompareTo(y.ToString()));
-    list.RemoveAt(1);
+    //list.Sort((x, y) => x.ToString().CompareTo(y.ToString()));
+    //list.RemoveAt(1);
 
-    samebytes = mdf.RemoveChannel(list.ToArray());
-    var newmdf = new Mdf(samebytes);
+    samebytes = mdf.RemoveChannel(new ChannelBlock[] { list[9] });
+    //var newmdf = new Mdf(samebytes);
+    var listValues = new List<double>();
+
+    //for (int i = 0; i < mdf.DataGroups.Count; i++)
+    //{
+    //    var group = mdf.DataGroups[i];
+    //    var records = group.Records;
+    //    for (int j = 0; j < records.Length; j++)
+    //    {
+    //        var value = records[j].GetValue(list[1]);
+    //        if (value == null)
+    //            continue;
+    //        listValues.Add(Convert.ToDouble(value));
+    //    }
+    //}
 
     var ex = Path.GetExtension(filename);
     var file = Path.GetFileNameWithoutExtension(filename) + "Test";

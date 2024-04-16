@@ -111,7 +111,11 @@
                 Reserved = Mdf.ReadU32();
 
             if (ptrFirstChannelGroupBlock.address != 0)
-                ChannelGroups.Read(ChannelGroupBlock.Read(Mdf, (int)ptrFirstChannelGroupBlock.address));
+            {
+                var CGBlock = ChannelGroupBlock.Read(Mdf, (int)ptrFirstChannelGroupBlock.address);
+                //CGBlock.ChannelGroupRemove += CGBlock_ChannelGroupRemove;
+                ChannelGroups.Read(CGBlock, CGBlock_ChannelGroupRemove);
+            }
 
             listAddressesV23.AddRange(new PointerAddress<uint>[]
             {
@@ -152,7 +156,11 @@
                 FileComment = TextBlock.Read(Mdf, (int)ptrTextBlockV4.address);
 
             if (ptrFirstChannelGroupBlockV4.address != 0)
-                ChannelGroups.Read(ChannelGroupBlock.Read(Mdf, (int)ptrFirstChannelGroupBlockV4.address));
+            {
+                var CGBlock = ChannelGroupBlock.Read(Mdf, (int)ptrFirstChannelGroupBlockV4.address);
+                //CGBlock.ChannelGroupRemove += CGBlock_ChannelGroupRemove;
+                ChannelGroups.Read(CGBlock, CGBlock_ChannelGroupRemove);
+            }
 
             if (ptrDataBlockV4.address != 0)
             {
@@ -176,6 +184,79 @@
             });
         }
 
+        private void CGBlock_ChannelGroupRemove(ChannelGroupBlock block, List<byte> bytes)
+        {
+            // нужно удалить channelgroup, удалить из массива байтов
+            // также нужно удалить данные из data record.
+            RemoveChannelGroups(block, bytes);
+
+            RemoveDataRecords(block, bytes);
+
+        }
+
+        private void RemoveChannelGroups(ChannelGroupBlock block, List<byte> bytes)
+        {
+            if (ptrFirstChannelGroupBlock.address == block.BlockAddress && NumChannelGroups == 1)// переписали указатель, который указывал на наш первый в списке channelGroup
+            {
+                var ptrOffset = BlockAddress + ptrFirstChannelGroupBlock.offset;
+                var newbytes = BitConverter.GetBytes((uint)0);
+                for (int i = ptrOffset, j = 0; i < newbytes.Length; i++, j++)
+                    bytes[i] = newbytes[j];
+            }
+            else if (ptrFirstChannelGroupBlock.address == block.BlockAddress)
+            {
+                if (block.Next != null)
+                {
+                    var ptrOffset = BlockAddress + ptrFirstChannelGroupBlock.offset;
+                    var newbytes = BitConverter.GetBytes((uint)block.Next.BlockAddress);
+                    for (int i = ptrOffset, j = 0; i < newbytes.Length; i++, j++)
+                        bytes[i] = newbytes[j];
+                }
+                else
+                {
+                    var ptrOffset = BlockAddress + ptrFirstChannelGroupBlock.offset;
+                    var newbytes = BitConverter.GetBytes((uint)0);
+                    for (int i = ptrOffset, j = 0; i < newbytes.Length; i++, j++)
+                        bytes[i] = newbytes[j];
+                }
+            }
+
+            //bytes.RemoveRange(block.BlockAddress, (int)block.Size);// удалили channelGroup
+
+            //Mdf.UpdateAddresses(bytes, block.Size, block.BlockAddress);
+
+            if (NumChannelGroups > 0)
+            {
+                NumChannelGroups -= 1;
+
+                var numChannelGroupsOffset = BlockAddress + ptrDataBlock.offset;
+                var value = BitConverter.GetBytes((uint)NumChannelGroups);
+                for (int i = numChannelGroupsOffset, j = 0; i < value.Length; i++, j++)
+                    bytes[i] = value[j];
+            }
+        }
+
+        private void RemoveDataRecords(ChannelGroupBlock block, List<byte> bytes)
+        {
+            var byteOffset = 0;
+            for (int i = 0; i < NumChannelGroups; i++)
+            {
+                var cg = ChannelGroups[i];
+                if (cg == block)
+                    break;
+
+                byteOffset += (int)cg.NumRecords * cg.RecordSize;
+            }
+
+            var countRecord = (int)block.NumRecords * block.RecordSize;
+
+            var indexStarted = (int)ptrDataBlock.address + byteOffset;
+
+            bytes.RemoveRange(indexStarted, countRecord);// удалили из файла данные
+
+            Mdf.UpdateAddresses(bytes, (ulong)countRecord, indexStarted);
+        }
+
         internal DataRecord[] ReadRecords()
         {
             var recordsList = new List<DataRecord>();
@@ -197,7 +278,7 @@
             Mdf.UpdatePosition((int)ptrDataBlock.address);
 
             if (Mdf.IDBlock.Version >= 400)
-                Mdf.UpdatePosition((int)ptrDataBlockV4.address);//
+                Mdf.UpdatePosition((int)ptrDataBlockV4.address);
 
             if (Mdf.IDBlock.Version >= 400)
             {
@@ -321,7 +402,7 @@
             }
         }
 
-        internal void DataGroupUpdateAddress(int indexDeleted, byte[] bytes, ulong countDeleted)
+        internal void DataGroupUpdateAddress(int indexDeleted, List<byte> bytes, ulong countDeleted)
         {
             if (Mdf.IDBlock.Version >= 400)
                 DataGroupUpdateAddressV4(indexDeleted, bytes, countDeleted);
@@ -329,7 +410,7 @@
                 DataGroupUpdateAddressV23(indexDeleted, bytes, (uint)countDeleted);
         }
 
-        private void DataGroupUpdateAddressV23(int indexDeleted, byte[] bytes, uint countDeleted)
+        private void DataGroupUpdateAddressV23(int indexDeleted, List<byte> bytes, uint countDeleted)
         {
             foreach (var ptr in listAddressesV23)
             {
@@ -342,7 +423,7 @@
             }
         }
 
-        private void DataGroupUpdateAddressV4(int indexDeleted, byte[] bytes, ulong countDeleted)
+        private void DataGroupUpdateAddressV4(int indexDeleted, List<byte> bytes, ulong countDeleted)
         {
             foreach (var ptr in listAddressesV4)
             {

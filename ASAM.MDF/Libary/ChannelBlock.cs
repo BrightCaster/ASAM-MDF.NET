@@ -8,7 +8,7 @@
 
     public class ChannelBlock : Block, INext<ChannelBlock>, IPrevious<ChannelBlock>, IParent<ChannelGroupBlock>
     {
-        public delegate void ChanelHandlerRemovedAddress(ChannelBlock block, byte[] bytes);
+        public delegate void ChanelHandlerRemovedAddress(ChannelBlock block, List<byte> bytes);
 
         private const int MIN_VERSION_LONG_SIGNAL_NAME = 212;
         private const int MIN_VERSION_DISPLAY_NAME = 300;
@@ -273,11 +273,8 @@
         /// Set this address 0 for previous channel. Lost address
         /// </summary>
         /// <returns>Copied modified the entire array of mdf bytes</returns>
-        public byte[] Remove(byte[] bytes)
+        public List<byte> Remove(List<byte> bytes)
         {
-            if (TypeV3 == ChannelTypeV3.Time)
-                return bytes;
-
             var previous = Previous;
             if (previous == null && next != null)// first of list node channels: [X channel]->[1 channel]->[2 channel]->...->[n channel]
             {
@@ -287,7 +284,7 @@
 
                 return bytes;
             }
-            else if (previous == null && next == null)
+            else if (previous == null && next == null) //       [null] -> [X channel] -> [null]
             {
                 ChanelsRemovedAddress?.Invoke(this, bytes);
 
@@ -305,31 +302,30 @@
                 next.Previous = previous;
 
             ChanelsRemovedAddress?.Invoke(this, bytes);
-            
-            var removedBytes = bytes.Where((x, index) => index <= BlockAddress || BlockAddress + (int)Size < index).ToArray();
-            Array.Resize(ref bytes, removedBytes.Length);
-            Array.Copy(removedBytes, bytes, removedBytes.Length);
+
             return bytes;
         }
 
-        private byte[] RemoveV23(byte[] bytes, ChannelBlock previous)
+        private List<byte> RemoveV23(List<byte> bytes, ChannelBlock previous)
         {
-            var thisPointer = BlockAddress + previous.ptrNextChannelBlock.offset;
+            var thisPointer = previous.BlockAddress + previous.ptrNextChannelBlock.offset;
 
             var newbytes = BitConverter.GetBytes(ptrNextChannelBlock.address);
-            Array.Copy(newbytes, 0, bytes, thisPointer, newbytes.Length);//changing the pointer to this block from the previous block, to the next of this block
+            for (int i = thisPointer, j = 0; j < newbytes.Length; i++, j++)
+                bytes[i] = newbytes[j];
 
             previous.ptrNextChannelBlock = ptrNextChannelBlock;
 
             return bytes;
         }
 
-        private byte[] RemoveV4(byte[] bytes, ChannelBlock previous)
+        private List<byte> RemoveV4(List<byte> bytes, ChannelBlock previous)
         {
-            var thisPointer = BlockAddress + previous.ptrNextChannelBlockV4.offset;
+            var thisPointer = previous.BlockAddress + previous.ptrNextChannelBlockV4.offset; // this pointer on prev channel next
 
             var newbytes = BitConverter.GetBytes(ptrNextChannelBlockV4.address);
-            Array.Copy(newbytes, 0, bytes, thisPointer, newbytes.Length);//changing the pointer to this block from the previous block, to the next of this block
+            for (int i = thisPointer, j = 0; j < newbytes.Length; i++, j++)
+                bytes[i] = newbytes[j];
 
             previous.ptrNextChannelBlockV4 = ptrNextChannelBlockV4;
 
@@ -409,7 +405,7 @@
             Array.Copy(bytesNextChannelLink, 0, array, blockIndex + 4, bytesNextChannelLink.Length);
         }
 
-        internal void ChannelUpdateAddress(int indexDeleted, byte[] bytes, ulong countDeleted)
+        internal void ChannelUpdateAddress(int indexDeleted, List<byte> bytes, ulong countDeleted)
         {
             if (Mdf.IDBlock.Version >= 400)
                 ChannelUpdateAddressV4(indexDeleted,bytes, countDeleted);
@@ -417,7 +413,7 @@
                 ChannelUpdateAddressV23(indexDeleted, bytes, (uint)countDeleted);
         }
 
-        private void ChannelUpdateAddressV23(int indexDeleted, byte[] bytes, uint countDeleted)
+        private void ChannelUpdateAddressV23(int indexDeleted, List<byte> bytes, uint countDeleted)
         {
             foreach (var ptr in listAddressesV23)
             {
@@ -430,7 +426,7 @@
             }
         }
 
-        private void ChannelUpdateAddressV4(int indexDeleted, byte[] bytes, ulong countDeleted)
+        private void ChannelUpdateAddressV4(int indexDeleted, List<byte> bytes, ulong countDeleted)
         {
             foreach (var ptr in listAddressesV4)
             {

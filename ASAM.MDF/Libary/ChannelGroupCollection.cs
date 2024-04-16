@@ -33,9 +33,13 @@
             set { throw new NotImplementedException(); }
         }
 
-        internal void Read(ChannelGroupBlock channelGroupBlock)
+        internal void Read(ChannelGroupBlock channelGroupBlock, ChannelGroupBlock.ChannelGroupBlockHandler action)
         {
             items = Common.BuildBlockList(null, channelGroupBlock, Parent);
+
+            if (action != null)
+                foreach (ChannelGroupBlock block in items)
+                    block.ChannelGroupRemove += (cg, bytes) => action(cg, bytes);
         }
         internal void Write(byte[] array, ref int index)
         {

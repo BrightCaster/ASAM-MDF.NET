@@ -5,6 +5,8 @@
 
     public class ChannelGroupBlock : Block, INext<ChannelGroupBlock>, IPrevious<ChannelGroupBlock>, IParent<DataGroupBlock>
     {
+        public delegate void ChannelGroupBlockHandler(ChannelGroupBlock block, List<byte> bytes);
+
         private List<PointerAddress<uint>> listAddressesV23;
         private List<PointerAddress<ulong>> listAddressesV4;
 
@@ -46,6 +48,7 @@
                 return next;
             }
         }
+        public event ChannelGroupBlockHandler ChannelGroupRemove;
 
         public ChannelGroupBlock Previous { get; set; }
         public ChannelCollection Channels { get; private set; }
@@ -61,7 +64,7 @@
         public uint NumRecords { get; set; }
         public SampleReductionCollection SampleReductions { get; private set; }
         public TextBlock TextName { get; private set; }
-        DataGroupBlock IParent<DataGroupBlock>.Parent { get; set; }
+        public DataGroupBlock Parent { get; set; }
 
         public static ChannelGroupBlock Create(Mdf mdf)
         {
@@ -114,7 +117,7 @@
             if (ptrFirstChannelBlock.address != 0)
             {
                 var chBlock = ChannelBlock.Read(Mdf, (int)ptrFirstChannelBlock.address);
-                chBlock.ChanelsRemovedAddress += (ch, bytes) => ChBlock_ChanelsRemovedAddress(ch, bytes);
+                //chBlock.ChanelsRemovedAddress += (ch, bytes) => ChBlock_ChanelsRemovedAddress(ch, bytes);
 
                 Channels.Read(chBlock, ChBlock_ChanelsRemovedAddress);
             }
@@ -156,9 +159,9 @@
                 TextName = TextBlock.Read(Mdf, (int)ptrTextNameV4.address);
 
             if (ptrFirstChannelBlockV4.address != 0)
-                Channels.Read(ChannelBlock.Read(Mdf, (int)ptrFirstChannelBlockV4.address), null);
+                Channels.Read(ChannelBlock.Read(Mdf, (int)ptrFirstChannelBlockV4.address), ChBlock_ChanelsRemovedAddress);
         }
-        private void ChBlock_ChanelsRemovedAddress(ChannelBlock block, byte[] bytes)
+        private void ChBlock_ChanelsRemovedAddress(ChannelBlock block, List<byte> bytes)
         {
             if (Mdf.IDBlock.Version >= 400)
                 RemoveChannelsV4(block, bytes);
@@ -166,9 +169,9 @@
                 RemoveChannelsV23(block, bytes);
         }
 
-        private void RemoveChannelsV23(ChannelBlock block, byte[] bytes)
+        private void RemoveChannelsV23(ChannelBlock block, List<byte> bytes)
         {
-            if (Channels[0] == block) //change first channel address on channelGroup
+            if (Channels[1] == block) //change first channel address on channelGroup
             {
                 var nextBlock = block.Next;
                 if (nextBlock == null)
@@ -178,23 +181,37 @@
 
                 var addressOfFirstChannel = BlockAddress + ptrFirstChannelBlock.offset;
                 var bytesFirstChannelAddress = BitConverter.GetBytes(ptrFirstChannelBlock.address);
-                Array.Copy(bytesFirstChannelAddress, 0, bytes, addressOfFirstChannel, bytesFirstChannelAddress.Length);
+
+                for (int i = addressOfFirstChannel, j = 0; j < bytesFirstChannelAddress.Length; i++, j++)
+                    bytes[i] = bytesFirstChannelAddress[j];
             }
+
             if (block.Previous == null && block.Next == null)
             {
                 ptrFirstChannelBlock.address = 0;
                 var addressOfFirstChannel = BlockAddress + ptrFirstChannelBlock.offset;
                 var bytesFirstChannelAddress = BitConverter.GetBytes(ptrFirstChannelBlock.address);
-                Array.Copy(bytesFirstChannelAddress, 0, bytes, addressOfFirstChannel, bytesFirstChannelAddress.Length);
+
+                for (int i = addressOfFirstChannel, j = 0; j < bytesFirstChannelAddress.Length; i++, j++)
+                    bytes[i] = bytesFirstChannelAddress[j];
+
             }
+            
             NumChannels -= 1;
 
-            var addressNumChannels = ptrTextBlock.offset + 2/*RecordID*/;
-            var newbytes = BitConverter.GetBytes(NumChannels);
-            Array.Copy(newbytes, 0, bytes, addressNumChannels, newbytes.Length);
+            if (NumChannels > 1)
+            {
+                var addressNumChannels = BlockAddress + ptrTextBlock.offset + 2/*RecordID*/;
+                var newbytes = BitConverter.GetBytes(NumChannels);
+
+                for (int i = addressNumChannels, j = 0; j < newbytes.Length; i++, j++)
+                    bytes[i] = newbytes[j];
+            }
+            else
+                ChannelGroupRemove?.Invoke(this, bytes);
         }
 
-        private void RemoveChannelsV4(ChannelBlock block, byte[] bytes)
+        private void RemoveChannelsV4(ChannelBlock block, List<byte> bytes)
         {
             if (Channels[0] == block) //change first channel address on channelGroup
             {
@@ -206,14 +223,20 @@
 
                 var addressOfFirstChannel = BlockAddress + ptrFirstChannelBlockV4.offset;
                 var bytesFirstChannelAddress = BitConverter.GetBytes(ptrFirstChannelBlockV4.address);
-                Array.Copy(bytesFirstChannelAddress, 0, bytes, addressOfFirstChannel, bytesFirstChannelAddress.Length);
+
+                for (int i = addressOfFirstChannel, j = 0; j < bytesFirstChannelAddress.Length; i++, j++)
+                    bytes[i] = bytesFirstChannelAddress[j];
+
             }
+
             if (block.Previous == null && block.Next == null)
             {
                 ptrFirstChannelBlockV4.address = 0;
                 var addressOfFirstChannel = BlockAddress + ptrFirstChannelBlockV4.offset;
                 var bytesFirstChannelAddress = BitConverter.GetBytes(ptrFirstChannelBlockV4.address);
-                Array.Copy(bytesFirstChannelAddress, 0, bytes, addressOfFirstChannel, bytesFirstChannelAddress.Length);
+
+                for (int i = addressOfFirstChannel, j = 0; j < bytesFirstChannelAddress.Length; i++, j++)
+                    bytes[i] = bytesFirstChannelAddress[j];
             }
         }
 
@@ -273,7 +296,7 @@
             Array.Copy(bytesNextChannelGroupBlockLink, 0, array, blockIndex + 4, bytesNextChannelGroupBlockLink.Length);
         }
 
-        internal void ChannelGroupUpdateAddress(int indexDeleted, byte[] bytes, ulong countDeleted)
+        internal void ChannelGroupUpdateAddress(int indexDeleted, List<byte> bytes, ulong countDeleted)
         {
             if (Mdf.IDBlock.Version >= 400)
                 ChannelGroupUpdateAddressV4(indexDeleted, bytes, countDeleted);
@@ -281,7 +304,7 @@
                 ChannelGroupUpdateAddressV23(indexDeleted, bytes, (uint)countDeleted);
         }
 
-        private void ChannelGroupUpdateAddressV23(int indexDeleted, byte[] bytes, uint countDeleted)
+        private void ChannelGroupUpdateAddressV23(int indexDeleted, List<byte> bytes, uint countDeleted)
         {
             foreach (var ptr in listAddressesV23)
             {
@@ -294,7 +317,7 @@
             }
         }
 
-        private void ChannelGroupUpdateAddressV4(int indexDeleted, byte[] bytes, ulong countDeleted)
+        private void ChannelGroupUpdateAddressV4(int indexDeleted, List<byte> bytes, ulong countDeleted)
         {
             foreach (var ptr in listAddressesV4)
             {
