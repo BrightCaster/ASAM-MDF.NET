@@ -37,10 +37,11 @@
 
         public byte[] RemoveChannel(ChannelBlock[] channelBlocks)
         {
+            var array = CheckChannelTimes(channelBlocks);
             //var bytes = new byte[Data.Length];
             var bytes = new List<byte>(Data);
             var copiedMDF = new Mdf(bytes.ToArray());
-            var BlockAddresses = channelBlocks.Select(x => x.BlockAddress);
+            var BlockAddresses = array.Select(x => x.BlockAddress);
 
             for (int i = 0; i < copiedMDF.DataGroups.Count; i++)
             {
@@ -61,6 +62,11 @@
             }
 
             return bytes.ToArray();
+        }
+
+        private ChannelBlock[] CheckChannelTimes(ChannelBlock[] channelBlocks)
+        {
+            return channelBlocks.Where(x => x.TypeV3 != Types.ChannelTypeV3.Time).ToArray();
         }
 
         public byte[] GetBytes()

@@ -1,5 +1,6 @@
 ﻿using ASAM.MDF.Libary;
 using System.Runtime.InteropServices;
+using System.Threading.Channels;
 
 var filename = ShowDialog();
 try
@@ -25,10 +26,14 @@ try
             }
         }
     }
-    //list.Sort((x, y) => x.ToString().CompareTo(y.ToString()));
+    list.Sort((x, y) => x.ToString().CompareTo(y.ToString()));
     //list.RemoveAt(1);
+    var indexs = new int[] { 2, 8, 12 };
+    var listRemoved = list.Where((x, i) => indexs.Contains(i)).ToArray();
+    var anotherChannels = list.Where(x => !listRemoved.Contains(x)).ToArray();
 
-    samebytes = mdf.RemoveChannel(new ChannelBlock[] { list[9] });
+
+    samebytes = mdf.RemoveChannel(anotherChannels);
     //var newmdf = new Mdf(samebytes);
     var listValues = new List<double>();
 

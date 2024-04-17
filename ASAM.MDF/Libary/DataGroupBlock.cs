@@ -198,42 +198,30 @@
         {
             if (ptrFirstChannelGroupBlock.address == block.BlockAddress && NumChannelGroups == 1)// переписали указатель, который указывал на наш первый в списке channelGroup
             {
-                var ptrOffset = BlockAddress + ptrFirstChannelGroupBlock.offset;
-                var newbytes = BitConverter.GetBytes((uint)0);
-                for (int i = ptrOffset, j = 0; i < newbytes.Length; i++, j++)
+                var ptrFirst = 0u;
+                var thisPointer = BlockAddress;
+                if (Previous != null)
+                    thisPointer = (int)Previous.ptrNextDataGroup.address;
+
+                var ptrOffset = thisPointer + ptrFirstChannelGroupBlock.offset;
+                var newbytes = BitConverter.GetBytes(ptrFirst);
+                for (int i = ptrOffset, j = 0; j < newbytes.Length; i++, j++)
                     bytes[i] = newbytes[j];
             }
             else if (ptrFirstChannelGroupBlock.address == block.BlockAddress)
             {
-                if (block.Next != null)
-                {
-                    var ptrOffset = BlockAddress + ptrFirstChannelGroupBlock.offset;
-                    var newbytes = BitConverter.GetBytes((uint)block.Next.BlockAddress);
-                    for (int i = ptrOffset, j = 0; i < newbytes.Length; i++, j++)
-                        bytes[i] = newbytes[j];
-                }
-                else
-                {
-                    var ptrOffset = BlockAddress + ptrFirstChannelGroupBlock.offset;
-                    var newbytes = BitConverter.GetBytes((uint)0);
-                    for (int i = ptrOffset, j = 0; i < newbytes.Length; i++, j++)
-                        bytes[i] = newbytes[j];
-                }
+                var ptrFirst = (uint)block.Next.BlockAddress;
+
+                var ptrOffset = BlockAddress + ptrFirstChannelGroupBlock.offset;
+                var newbytes = BitConverter.GetBytes(ptrFirst);
+                for (int i = ptrOffset, j = 0; j < newbytes.Length; i++, j++)
+                    bytes[i] = newbytes[j];
+
             }
 
             //bytes.RemoveRange(block.BlockAddress, (int)block.Size);// удалили channelGroup
 
             //Mdf.UpdateAddresses(bytes, block.Size, block.BlockAddress);
-
-            if (NumChannelGroups > 0)
-            {
-                NumChannelGroups -= 1;
-
-                var numChannelGroupsOffset = BlockAddress + ptrDataBlock.offset;
-                var value = BitConverter.GetBytes((uint)NumChannelGroups);
-                for (int i = numChannelGroupsOffset, j = 0; i < value.Length; i++, j++)
-                    bytes[i] = value[j];
-            }
         }
 
         private void RemoveDataRecords(ChannelGroupBlock block, List<byte> bytes)
@@ -248,7 +236,19 @@
                 byteOffset += (int)cg.NumRecords * cg.RecordSize;
             }
 
+            if (NumChannelGroups > 0)
+            {
+                NumChannelGroups -= 1;
+
+                var numChannelGroupsOffset = BlockAddress + ptrDataBlock.offset + 4;
+                var value = BitConverter.GetBytes(NumChannelGroups);
+                for (int i = numChannelGroupsOffset, j = 0; j < value.Length; i++, j++)
+                    bytes[i] = value[j];
+            }
+
             var countRecord = (int)block.NumRecords * block.RecordSize;
+
+            block.ClearDataType(bytes);
 
             var indexStarted = (int)ptrDataBlock.address + byteOffset;
 
@@ -319,13 +319,17 @@
                 for (int i = 0; i < NumChannelGroups; i++)
                 {
                     var group = ChannelGroups[i];
+                    var countData = 0;
 
                     for (int k = 0; k < group.NumRecords; k++)
                     {
                         var recordData = Mdf.ReadBytes(group.RecordSize);
 
                         recordsList.Add(new DataRecord(group, recordData));
+                        
+                        countData += group.RecordSize;
                     }
+                    countData = 0;
                 }
             }
 
@@ -414,11 +418,11 @@
         {
             foreach (var ptr in listAddressesV23)
             {
-                if ((int)ptr.address > indexDeleted)
+                if ((int)ptr.address >= indexDeleted)
                 {
                     ptr.address -= countDeleted;
 
-                    this.CopyAddress(ptr, bytes);
+                    this.CopyAddress(ptr, bytes, indexDeleted, countDeleted);
                 }
             }
         }
@@ -427,11 +431,11 @@
         {
             foreach (var ptr in listAddressesV4)
             {
-                if ((int)ptr.address > indexDeleted)
+                if ((int)ptr.address >= indexDeleted)
                 {
                     ptr.address -= countDeleted;
 
-                    this.CopyAddress(ptr, bytes);
+                    this.CopyAddress(ptr, bytes, indexDeleted, countDeleted);
                 }
             }
         }

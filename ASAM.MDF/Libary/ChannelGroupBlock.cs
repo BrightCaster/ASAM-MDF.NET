@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Net;
 
     public class ChannelGroupBlock : Block, INext<ChannelGroupBlock>, IPrevious<ChannelGroupBlock>, IParent<DataGroupBlock>
     {
@@ -171,37 +172,17 @@
 
         private void RemoveChannelsV23(ChannelBlock block, List<byte> bytes)
         {
-            if (Channels[1] == block) //change first channel address on channelGroup
-            {
-                var nextBlock = block.Next;
-                if (nextBlock == null)
-                    ptrFirstChannelBlock.address = 0;
-                else
-                    ptrFirstChannelBlock.address = (uint)block.Next.BlockAddress;
-
-                var addressOfFirstChannel = BlockAddress + ptrFirstChannelBlock.offset;
-                var bytesFirstChannelAddress = BitConverter.GetBytes(ptrFirstChannelBlock.address);
-
-                for (int i = addressOfFirstChannel, j = 0; j < bytesFirstChannelAddress.Length; i++, j++)
-                    bytes[i] = bytesFirstChannelAddress[j];
-            }
-
-            if (block.Previous == null && block.Next == null)
-            {
-                ptrFirstChannelBlock.address = 0;
-                var addressOfFirstChannel = BlockAddress + ptrFirstChannelBlock.offset;
-                var bytesFirstChannelAddress = BitConverter.GetBytes(ptrFirstChannelBlock.address);
-
-                for (int i = addressOfFirstChannel, j = 0; j < bytesFirstChannelAddress.Length; i++, j++)
-                    bytes[i] = bytesFirstChannelAddress[j];
-
-            }
-            
             NumChannels -= 1;
 
             if (NumChannels > 1)
             {
-                var addressNumChannels = BlockAddress + ptrTextBlock.offset + 2/*RecordID*/;
+                var thisPointer = BlockAddress;
+                if (Previous != null)
+                    thisPointer = (int)Previous.ptrNextChannelGroup.address;
+                else
+                    thisPointer = (int)Parent.ptrFirstChannelGroupBlock.address;
+
+                var addressNumChannels = thisPointer + ptrTextBlock.offset + 4 + 2/*RecordID*/;
                 var newbytes = BitConverter.GetBytes(NumChannels);
 
                 for (int i = addressNumChannels, j = 0; j < newbytes.Length; i++, j++)
@@ -216,13 +197,13 @@
             if (Channels[0] == block) //change first channel address on channelGroup
             {
                 var nextBlock = block.Next;
-                if (nextBlock == null)
-                    ptrFirstChannelBlockV4.address = 0;
-                else
-                    ptrFirstChannelBlockV4.address = (ulong)block.Next.BlockAddress;
+                var ptrFirst = 0ul;
+                
+                if (nextBlock != null)
+                    ptrFirst = (ulong)block.Next.BlockAddress;
 
                 var addressOfFirstChannel = BlockAddress + ptrFirstChannelBlockV4.offset;
-                var bytesFirstChannelAddress = BitConverter.GetBytes(ptrFirstChannelBlockV4.address);
+                var bytesFirstChannelAddress = BitConverter.GetBytes(ptrFirst);
 
                 for (int i = addressOfFirstChannel, j = 0; j < bytesFirstChannelAddress.Length; i++, j++)
                     bytes[i] = bytesFirstChannelAddress[j];
@@ -231,9 +212,9 @@
 
             if (block.Previous == null && block.Next == null)
             {
-                ptrFirstChannelBlockV4.address = 0;
+                var ptrFirst = 0ul;
                 var addressOfFirstChannel = BlockAddress + ptrFirstChannelBlockV4.offset;
-                var bytesFirstChannelAddress = BitConverter.GetBytes(ptrFirstChannelBlockV4.address);
+                var bytesFirstChannelAddress = BitConverter.GetBytes(ptrFirst);
 
                 for (int i = addressOfFirstChannel, j = 0; j < bytesFirstChannelAddress.Length; i++, j++)
                     bytes[i] = bytesFirstChannelAddress[j];
@@ -308,11 +289,11 @@
         {
             foreach (var ptr in listAddressesV23)
             {
-                if ((int)ptr.address > indexDeleted)
+                if ((int)ptr.address >= indexDeleted)
                 {
                     ptr.address -= countDeleted;
 
-                    this.CopyAddress(ptr, bytes);
+                    this.CopyAddress(ptr, bytes, indexDeleted, countDeleted);
                 }
             }
         }
@@ -321,13 +302,30 @@
         {
             foreach (var ptr in listAddressesV4)
             {
-                if ((int)ptr.address > indexDeleted)
+                if ((int)ptr.address >= indexDeleted)
                 {
                     ptr.address -= countDeleted;
 
-                    this.CopyAddress(ptr, bytes);
+                    this.CopyAddress(ptr, bytes, indexDeleted, countDeleted);
                 }
             }
+        }
+
+        internal void ClearDataType(List<byte> bytes)
+        {
+            RecordSize = 0;
+            var addressRecordSize = BlockAddress + ptrTextBlock.offset + 4 + 2/*RecordID*/ + 2/*NumChannels*/;
+            var newbytes = BitConverter.GetBytes(RecordSize);
+
+            for (int i = addressRecordSize, j = 0; j < newbytes.Length; i++, j++)
+                bytes[i] = newbytes[j];
+
+            NumRecords = 0;
+            var addressNumRecords = BlockAddress + ptrTextBlock.offset + 4 + 2/*RecordID*/ + 2/*NumChannels*/ + 2/*RecordSize*/;
+            newbytes = BitConverter.GetBytes(NumRecords);
+
+            for (int i = addressNumRecords, j = 0; j < newbytes.Length; i++, j++)
+                bytes[i] = newbytes[j];
         }
     }
 }

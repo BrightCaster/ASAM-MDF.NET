@@ -275,6 +275,9 @@
         /// <returns>Copied modified the entire array of mdf bytes</returns>
         public List<byte> Remove(List<byte> bytes)
         {
+            if (TypeV3 == ChannelTypeV3.Time)
+                return bytes;
+
             var previous = Previous;
             if (previous == null && next != null)// first of list node channels: [X channel]->[1 channel]->[2 channel]->...->[n channel]
             {
@@ -292,7 +295,7 @@
             }
 
             if (Mdf.IDBlock.Version >= 400)
-                bytes = RemoveV4(bytes,previous);
+                bytes = RemoveV4(bytes, previous);
             else
                 bytes = RemoveV23(bytes, previous);
 
@@ -314,7 +317,8 @@
             for (int i = thisPointer, j = 0; j < newbytes.Length; i++, j++)
                 bytes[i] = newbytes[j];
 
-            previous.ptrNextChannelBlock = ptrNextChannelBlock;
+            previous.ptrNextChannelBlock.address = ptrNextChannelBlock.address;
+            ptrNextChannelBlock.address = 0;
 
             return bytes;
         }
@@ -327,7 +331,7 @@
             for (int i = thisPointer, j = 0; j < newbytes.Length; i++, j++)
                 bytes[i] = newbytes[j];
 
-            previous.ptrNextChannelBlockV4 = ptrNextChannelBlockV4;
+            previous.ptrNextChannelBlockV4.address = ptrNextChannelBlockV4.address;
 
             return bytes;
         }
@@ -417,11 +421,11 @@
         {
             foreach (var ptr in listAddressesV23)
             {
-                if ((int)ptr.address > indexDeleted)
+                if ((int)ptr.address >= indexDeleted)
                 {
                     ptr.address -= countDeleted;
 
-                    this.CopyAddress(ptr, bytes);
+                    this.CopyAddress(ptr, bytes, indexDeleted, countDeleted);
                 }
             }
         }
@@ -430,11 +434,11 @@
         {
             foreach (var ptr in listAddressesV4)
             {
-                if ((int)ptr.address > indexDeleted)
+                if ((int)ptr.address >= indexDeleted)
                 {
                     ptr.address -= countDeleted;
 
-                    this.CopyAddress(ptr, bytes);
+                    this.CopyAddress(ptr, bytes, indexDeleted, countDeleted);
                 }
             }
         }
