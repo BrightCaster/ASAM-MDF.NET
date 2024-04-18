@@ -14,9 +14,6 @@
         private const int MIN_VERSION_DISPLAY_NAME = 300;
         private const int MIN_VERSION_ADDITIONAL_BYTE_OFFSET = 300;
 
-        private List<PointerAddress<uint>> listAddressesV23;
-        private List<PointerAddress<ulong>> listAddressesV4;
-
         internal PointerAddress<uint> ptrNextChannelBlock;
         internal PointerAddress<uint> ptrChannelConversionBlock;
         internal PointerAddress<uint> ptrDataBlockSignal;
@@ -415,6 +412,8 @@
                 ChannelUpdateAddressV4(indexDeleted,bytes, countDeleted);
             else
                 ChannelUpdateAddressV23(indexDeleted, bytes, (uint)countDeleted);
+
+            ChannelConversion?.ChannelConversionUpdateAddress(indexDeleted, bytes, countDeleted);
         }
 
         private void ChannelUpdateAddressV23(int indexDeleted, List<byte> bytes, uint countDeleted)

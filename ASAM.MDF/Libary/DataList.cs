@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Security.Cryptography;
 
 namespace ASAM.MDF.Libary
@@ -46,6 +47,8 @@ namespace ASAM.MDF.Libary
         {
             base.ReadV4();
 
+            listAddressesV4 = new List<PointerAddress<ulong>>();
+
             ptrNextDLV4 =  new PointerAddress<ulong>(Mdf.ReadU64().ValidateAddress(Mdf), 24);
             ptrDataBlockAddressV4 = new PointerAddress<ulong>(Mdf.ReadU64().ValidateAddress(Mdf),ptrNextDLV4.offset + 8);
             Flags = (ListFlags)Mdf.ReadU16();
@@ -57,8 +60,33 @@ namespace ASAM.MDF.Libary
             else
                 BlockOffset = Mdf.Read64();
 
+            listAddressesV4.AddRange(new PointerAddress<ulong>[]
+            {
+                ptrNextDLV4,
+                ptrDataBlockAddressV4,
+            });
+
             if (ptrDataBlockAddressV4.address != 0)
                 DataBlock = DataBlock.Read(Mdf, (int)ptrDataBlockAddressV4.address);
+        }
+
+        internal void DataListUpdateAddress(int indexDeleted, List<byte> bytes, ulong countDeleted)
+        {
+            if (Mdf.IDBlock.Version >= 400)
+                DataListUpdateAddressV4(indexDeleted, bytes, countDeleted);
+        }
+
+        private void DataListUpdateAddressV4(int indexDeleted, List<byte> bytes, ulong countDeleted)
+        {
+            foreach (var ptr in listAddressesV4)
+            {
+                if ((int)ptr.address >= indexDeleted)
+                {
+                    ptr.address -= countDeleted;
+
+                    this.CopyAddress(ptr, bytes, indexDeleted, countDeleted);
+                }
+            }
         }
     }
 }

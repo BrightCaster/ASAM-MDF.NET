@@ -1,10 +1,12 @@
-﻿namespace ASAM.MDF.Libary
+﻿using System.Collections.Generic;
+
+namespace ASAM.MDF.Libary
 {
     public class SourceInformation : Block
     {
-        internal (ulong address, int offset) ptrTextName;
-        internal (ulong address, int offset) ptrTextPath;
-        internal (ulong address, int offset) ptrTextComment;
+        internal PointerAddress<ulong> ptrTextNameV4;
+        internal PointerAddress<ulong> ptrTextPathV4;
+        internal PointerAddress<ulong> ptrTextCommentV4;
 
         public byte SourceType { get; private set; }
         public byte BusType { get; private set; }
@@ -30,22 +32,49 @@
         {
             base.ReadV4();
 
-            ptrTextName = (Mdf.ReadU64().ValidateAddress(Mdf), 24);
-            ptrTextPath = (Mdf.ReadU64().ValidateAddress(Mdf), ptrTextName.offset + 8);
-            ptrTextComment = (Mdf.ReadU64().ValidateAddress(Mdf), ptrTextPath.offset + 8);
+            listAddressesV4 = new List<PointerAddress<ulong>>();
+
+            ptrTextNameV4 = new PointerAddress<ulong>(Mdf.ReadU64().ValidateAddress(Mdf), 24);
+            ptrTextPathV4 = new PointerAddress<ulong>(Mdf.ReadU64().ValidateAddress(Mdf), ptrTextNameV4.offset + 8);
+            ptrTextCommentV4 = new PointerAddress<ulong>(Mdf.ReadU64().ValidateAddress(Mdf), ptrTextPathV4.offset + 8);
             SourceType = Mdf.ReadByte();
             BusType = Mdf.ReadByte();
             SiFlags = Mdf.ReadByte();
             Reserved1 = Mdf.ReadByte();
 
-             if (ptrTextComment.address != 0)
-                FileComment = TextBlock.Read(Mdf, (int)ptrTextComment.address);
+            listAddressesV4.AddRange(new PointerAddress<ulong>[]
+            {
+                ptrTextNameV4,
+                ptrTextPathV4,
+                ptrTextCommentV4,
+            });
 
-             if (ptrTextName.address != 0)
-                TextBlockName = TextBlock.Read(Mdf, (int)ptrTextName.address);
+             if (ptrTextCommentV4.address != 0)
+                FileComment = TextBlock.Read(Mdf, (int)ptrTextCommentV4.address);
 
-             if (ptrTextPath.address != 0)
-                TextBlockPath = TextBlock.Read(Mdf, (int)ptrTextPath.address);
+             if (ptrTextNameV4.address != 0)
+                TextBlockName = TextBlock.Read(Mdf, (int)ptrTextNameV4.address);
+
+             if (ptrTextPathV4.address != 0)
+                TextBlockPath = TextBlock.Read(Mdf, (int)ptrTextPathV4.address);
+        }
+        internal void SourceInformationUpdateAddress(int indexDeleted, List<byte> bytes, ulong countDeleted)
+        {
+            if (Mdf.IDBlock.Version >= 400)
+                SourceInformationUpdateAddressV4(indexDeleted, bytes, countDeleted);
+        }
+
+        private void SourceInformationUpdateAddressV4(int indexDeleted, List<byte> bytes, ulong countDeleted)
+        {
+            foreach (var ptr in listAddressesV4)
+            {
+                if ((int)ptr.address >= indexDeleted)
+                {
+                    ptr.address -= countDeleted;
+
+                    this.CopyAddress(ptr, bytes, indexDeleted, countDeleted);
+                }
+            }
         }
     }
 }

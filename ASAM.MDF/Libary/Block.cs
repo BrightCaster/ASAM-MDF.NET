@@ -1,6 +1,7 @@
 ﻿namespace ASAM.MDF.Libary
 {
     using System;
+    using System.Collections.Generic;
     using System.Text;
 
     /// <summary>
@@ -8,6 +9,8 @@
     /// </summary>
     public abstract class Block
     {
+        internal List<PointerAddress<uint>> listAddressesV23;
+        internal List<PointerAddress<ulong>> listAddressesV4;
         protected Block(Mdf mdf)
         {
             if (mdf == null)
@@ -25,7 +28,7 @@
         public ulong Size { get; protected set; }
         [MdfVersion(400, 0)]
         public ulong LinksCount { get; private set; }
-        public int BlockAddress { get; private set; }
+        public int BlockAddress { get;  set; }
 
         internal virtual ushort GetSize()
         {

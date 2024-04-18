@@ -1,10 +1,14 @@
 ﻿namespace ASAM.MDF.Libary
 {
     using System;
+    using System.Collections.Generic;
     using ASAM.MDF.Libary.Types;
 
     public class HeaderBlock : Block
     {
+        internal List<PointerAddress<uint>> listAddressesV23;
+        internal List<PointerAddress<ulong>> listAddressesV4;
+
         private string author;
         private string date;
         private string organization;
@@ -12,9 +16,13 @@
         private string subject;
         private string time;
         private string timerIdentification;
-        internal (ulong address, int offest) ptrFirstDataGroup;
-        internal (ulong address, int offest) ptrTextBlock;
-        internal (ulong address, int offest) ptrProgramBlock;
+        internal PointerAddress<uint> ptrFirstDataGroup;
+        internal PointerAddress<uint> ptrTextBlock;
+        internal PointerAddress<uint> ptrProgramBlock;
+        
+        internal PointerAddress<ulong> ptrFirstDataGroupV4;
+        internal PointerAddress<ulong> ptrTextBlockV4;
+        internal PointerAddress<ulong> ptrProgramBlockV4;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="HeaderBlock" /> class.
@@ -224,9 +232,11 @@
         {
             base.ReadV23();
 
-            ptrFirstDataGroup = (Mdf.ReadU32().ValidateAddress(Mdf), 4);
-            ptrTextBlock = (Mdf.ReadU32().ValidateAddress(Mdf), ptrFirstDataGroup.offest + 4);
-            ptrProgramBlock = (Mdf.ReadU32().ValidateAddress(Mdf), ptrFirstDataGroup.offest + 4);
+            listAddressesV23 = new List<PointerAddress<uint>>();
+
+            ptrFirstDataGroup = new PointerAddress<uint>(Mdf.ReadU32().ValidateAddress(Mdf), 4);
+            ptrTextBlock = new PointerAddress<uint>(Mdf.ReadU32().ValidateAddress(Mdf), ptrFirstDataGroup.offset+ 4);
+            ptrProgramBlock = new PointerAddress<uint>(Mdf.ReadU32().ValidateAddress(Mdf), ptrTextBlock.offset + 4);
 
             DataGroupsCount = Mdf.ReadU16();
 
@@ -236,6 +246,13 @@
             Organization = Mdf.GetString(32);
             Project = Mdf.GetString(32);
             Subject = Mdf.GetString(32);
+
+            listAddressesV23.AddRange(new PointerAddress<uint>[]
+            {
+                ptrFirstDataGroup,
+                ptrTextBlock,
+                ptrProgramBlock,
+            });
 
             if (Mdf.IDBlock.Version == 320)
             {
@@ -342,7 +359,9 @@
         {
             base.ReadV4();
 
-            ptrFirstDataGroup = (Mdf.ReadU64().ValidateAddress(Mdf), 24); //Adress DataGroup
+            listAddressesV4 = new List<PointerAddress<ulong>>();
+
+            ptrFirstDataGroupV4 = new PointerAddress<ulong>(Mdf.ReadU64().ValidateAddress(Mdf), 24); //Adress DataGroup
                                                //skiped: FileHistoryBlock (not used) +8
                                                //skiped: Chanel... (not used)        +8
                                                //skiped: AttachmentBlock (not used)  +8
@@ -350,7 +369,7 @@
             var skippedCount = 8 * 4;
             Mdf.UpdatePosition(Mdf.position + skippedCount);
 
-            ptrTextBlock = (Mdf.ReadU64().ValidateAddress(Mdf), skippedCount + ptrFirstDataGroup.offest);
+            ptrTextBlockV4 = new PointerAddress<ulong>(Mdf.ReadU64().ValidateAddress(Mdf), skippedCount + ptrFirstDataGroupV4.offset);
             StartTimeNs = Mdf.ReadU64();
             TimeZoneOffsetMinutes = Mdf.Read16();
             DstOffsetMinutes = Mdf.Read16();
@@ -361,15 +380,54 @@
             StartAngle = Mdf.ReadDouble();
             StartDistance = Mdf.ReadDouble();
 
-            if (ptrTextBlock.address != 0)
+            listAddressesV4.AddRange(new PointerAddress<ulong>[]
             {
-                FileComment = TextBlock.Read(Mdf, (int)ptrTextBlock.address);
+                ptrFirstDataGroupV4,
+                ptrTextBlockV4,
+            });
+
+            if (ptrTextBlockV4.address != 0)
+            {
+                FileComment = TextBlock.Read(Mdf, (int)ptrTextBlockV4.address);
             }
 
             // Check if ptrFirstDataGroup is null
-            if (ptrFirstDataGroup.address != 0)
+            if (ptrFirstDataGroupV4.address != 0)
             {
-                Mdf.DataGroups.Read(DataGroupBlock.Read(Mdf, (int)ptrFirstDataGroup.address));
+                Mdf.DataGroups.Read(DataGroupBlock.Read(Mdf, (int)ptrFirstDataGroupV4.address));
+            }
+        }
+        internal void HeaderUpdateAddress(int indexDeleted, List<byte> bytes, ulong countDeleted)
+        {
+            if (Mdf.IDBlock.Version >= 400)
+                HeaderUpdateAddressV4(indexDeleted, bytes, countDeleted);
+            else
+                HeaderUpdateAddressV23(indexDeleted, bytes, (uint)countDeleted);
+        }
+
+        private void HeaderUpdateAddressV23(int indexDeleted, List<byte> bytes, uint countDeleted)
+        {
+            foreach (var ptr in listAddressesV23)
+            {
+                if ((int)ptr.address >= indexDeleted)
+                {
+                    ptr.address -= countDeleted;
+
+                    this.CopyAddress(ptr, bytes, indexDeleted, countDeleted);
+                }
+            }
+        }
+
+        private void HeaderUpdateAddressV4(int indexDeleted, List<byte> bytes, ulong countDeleted)
+        {
+            foreach (var ptr in listAddressesV4)
+            {
+                if ((int)ptr.address >= indexDeleted)
+                {
+                    ptr.address -= countDeleted;
+
+                    this.CopyAddress(ptr, bytes, indexDeleted, countDeleted);
+                }
             }
         }
     }

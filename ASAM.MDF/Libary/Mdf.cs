@@ -102,22 +102,42 @@
             if (countDeleted == 0)
                 return;
 
+            HDBlock.HeaderUpdateAddress(indexDeleted, bytes, countDeleted);
+
             for (int i = 0; i < DataGroups.Count; i++)
             {
                 var dataGroup = DataGroups[i];
+
+                if (dataGroup.BlockAddress > indexDeleted)
+                    dataGroup.BlockAddress -= (int)countDeleted;
 
                 dataGroup.DataGroupUpdateAddress(indexDeleted, bytes, countDeleted);
                 for (int j = 0; j < dataGroup.ChannelGroups.Count; j++)
                 {
                     var channelGroup = dataGroup.ChannelGroups[j];
 
+                    if (channelGroup.BlockAddress > indexDeleted)
+                        channelGroup.BlockAddress -= (int)countDeleted;
+
                     channelGroup.ChannelGroupUpdateAddress(indexDeleted, bytes, countDeleted);
                     for (int k = 0; k < channelGroup.Channels.Count; k++)
                     {
                         var channel = channelGroup.Channels[k];
 
+                        if (channel.BlockAddress > indexDeleted)
+                            channel.BlockAddress -= (int)countDeleted;
+
                         channel.ChannelUpdateAddress(indexDeleted, bytes, countDeleted);
                     }
+                }
+                for (int j = 0; j < dataGroup.DataListColl.Count; j++)
+                {
+                    var dataList = dataGroup.DataListColl[j];
+
+                    if (dataList.BlockAddress > indexDeleted)
+                        dataList.BlockAddress -= (int)countDeleted;
+
+                    dataList.DataListUpdateAddress(indexDeleted, bytes, countDeleted);
                 }
             }
         }

@@ -28,7 +28,7 @@ try
     }
     list.Sort((x, y) => x.ToString().CompareTo(y.ToString()));
     //list.RemoveAt(1);
-    var indexs = new int[] { 2, 8, 12 };
+    var indexs = new int[] { 1, 2, 3, 4, 5 };
     var listRemoved = list.Where((x, i) => indexs.Contains(i)).ToArray();
     var anotherChannels = list.Where(x => !listRemoved.Contains(x)).ToArray();
 

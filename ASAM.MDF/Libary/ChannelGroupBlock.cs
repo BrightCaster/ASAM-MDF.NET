@@ -8,9 +8,6 @@
     {
         public delegate void ChannelGroupBlockHandler(ChannelGroupBlock block, List<byte> bytes);
 
-        private List<PointerAddress<uint>> listAddressesV23;
-        private List<PointerAddress<ulong>> listAddressesV4;
-
         internal PointerAddress<uint> ptrNextChannelGroup;
         internal PointerAddress<uint> ptrFirstChannelBlock;
         internal PointerAddress<uint> ptrTextName;
@@ -66,6 +63,7 @@
         public SampleReductionCollection SampleReductions { get; private set; }
         public TextBlock TextName { get; private set; }
         public DataGroupBlock Parent { get; set; }
+        public SourceInformation SourceInformation { get; private set; }
 
         public static ChannelGroupBlock Create(Mdf mdf)
         {
@@ -152,6 +150,9 @@
                 ptrFirstSampleReductionBlockV4,
                 ptrTextBlockV4,
             });
+
+            if (ptrSourceInfoV4.address != 0)
+                SourceInformation = SourceInformation.Read(Mdf, (int)ptrSourceInfoV4.address);
 
             if (ptrTextBlockV4.address != 0)
                 Comment = TextBlock.Read(Mdf, (int)ptrTextBlockV4.address);
@@ -283,6 +284,8 @@
                 ChannelGroupUpdateAddressV4(indexDeleted, bytes, countDeleted);
             else
                 ChannelGroupUpdateAddressV23(indexDeleted, bytes, (uint)countDeleted);
+
+            SourceInformation?.SourceInformationUpdateAddress(indexDeleted, bytes, countDeleted);
         }
 
         private void ChannelGroupUpdateAddressV23(int indexDeleted, List<byte> bytes, uint countDeleted)

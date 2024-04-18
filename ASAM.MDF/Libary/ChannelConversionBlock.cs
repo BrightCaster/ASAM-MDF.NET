@@ -19,7 +19,6 @@
         internal PointerAddress<ulong> ptrInverseConversionV4;
 
         private string physicalUnit;
-        private int indexPointer;
 
         private ChannelConversionBlock(Mdf mdf) : base(mdf)
         {
@@ -87,6 +86,8 @@
         {
             base.ReadV4();
 
+            listAddressesV4 = new List<PointerAddress<ulong>>();
+
             ptrTextBlockNameV4 = new PointerAddress<ulong>(Mdf.ReadU64().ValidateAddress(Mdf), 24);
             ptrTextBlockUnitV4 = new PointerAddress<ulong>(Mdf.ReadU64().ValidateAddress(Mdf),ptrTextBlockName.offset + 8);
             ptrFileCommentV4 = new PointerAddress<ulong>(Mdf.ReadU64().ValidateAddress(Mdf), ptrTextBlockUnit.offset + 8);
@@ -104,20 +105,28 @@
             MinPhysicalValue = Mdf.ReadDouble();
             MaxPhysicalValue = Mdf.ReadDouble();
 
-            indexPointer = (int)Mdf.position;
+            listAddressesV4.AddRange(new PointerAddress<ulong>[]
+            {
+                ptrTextBlockNameV4,
+                ptrTextBlockUnitV4,
+                ptrFileCommentV4,
+                ptrInverseConversionV4,
+            });
+
+            var indexPointer = Mdf.position;
 
             AdditionalConversionData.Data = new byte[ValParamCount * 8];
 
             Array.Copy(Mdf.Data, indexPointer, AdditionalConversionData.Data, 0, AdditionalConversionData.Data.Length);
 
-            if (ptrFileComment.address != 0)
-                FileComment = TextBlock.Read(Mdf, (int)ptrFileComment.address);
+            if (ptrFileCommentV4.address != 0)
+                FileComment = TextBlock.Read(Mdf, (int)ptrFileCommentV4.address);
 
-            if (ptrTextBlockName.address != 0)
-                ConversionName = TextBlock.Read(Mdf, (int)ptrTextBlockName.address);
+            if (ptrTextBlockNameV4.address != 0)
+                ConversionName = TextBlock.Read(Mdf, (int)ptrTextBlockNameV4.address);
 
-            if (ptrTextBlockUnit.address != 0)
-                ConversionUnit = TextBlock.Read(Mdf, (int)ptrTextBlockUnit.address);
+            if (ptrTextBlockUnitV4.address != 0)
+                ConversionUnit = TextBlock.Read(Mdf, (int)ptrTextBlockUnitV4.address);
         }
         internal override ushort GetSize()
         {
@@ -153,6 +162,25 @@
             }
 
             index += GetSize();
+        }
+
+        internal void ChannelConversionUpdateAddress(int indexDeleted, List<byte> bytes, ulong countDeleted)
+        {
+            if (Mdf.IDBlock.Version >= 400)
+                ChannelConversionUpdateAddressV4(indexDeleted, bytes, countDeleted);
+        }
+
+        private void ChannelConversionUpdateAddressV4(int indexDeleted, List<byte> bytes, ulong countDeleted)
+        {
+            foreach (var ptr in listAddressesV4)
+            {
+                if ((int)ptr.address >= indexDeleted)
+                {
+                    ptr.address -= countDeleted;
+
+                    this.CopyAddress(ptr, bytes, indexDeleted, countDeleted);
+                }
+            }
         }
     }
 }
