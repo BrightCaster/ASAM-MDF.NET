@@ -74,11 +74,11 @@ namespace ASAM.MDF.Libary
 
         public static bool ReadBoolean(this Mdf mdf)
         {
-            var value = BitConverter.ToUInt16(mdf.Data, mdf.position);
+            var value = BitConverter.ToBoolean(mdf.Data, mdf.position);
 
             mdf.position += 2;
 
-            return value != 0;
+            return value;
         }
         public static double ReadDouble(this Mdf mdf)
         {

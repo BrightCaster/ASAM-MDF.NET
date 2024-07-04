@@ -174,10 +174,10 @@
             }
             SampleRate = Mdf.ReadDouble();
 
-            var offset = 2 + 32 + 128 + 2 + 2 + 2 + 2 + 16 + 8;
+            var offset = ptrChannelComment.offset + 2 + 32 + 128 + 2 + 2 + 2 + 2 + 16 + 8;
             if (Mdf.IDBlock.Version >= MIN_VERSION_LONG_SIGNAL_NAME)
             {
-                ptrLongSignalName = new PointerAddress<uint>(Mdf.ReadU32().ValidateAddress(Mdf), ptrChannelComment.offset + offset);
+                ptrLongSignalName = new PointerAddress<uint>(Mdf.ReadU32().ValidateAddress(Mdf), offset);
                 offset += 4;
                 listAddressesV23.Add(ptrLongSignalName);
 

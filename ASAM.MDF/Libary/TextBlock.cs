@@ -1,6 +1,7 @@
 ﻿namespace ASAM.MDF.Libary
 {
     using System;
+    using System.Drawing;
     using System.IO;
     using System.Linq;
     using System.Text;
@@ -61,6 +62,9 @@
 
             var block = new TextBlock(mdf);
             block.Read();
+
+            if (block.Size > (ulong)mdf.data.Length || block.Size <= 4)
+                return null;
 
             block.Text = mdf.GetString((int)block.Size - (mdf.position - block.BlockAddress));
 

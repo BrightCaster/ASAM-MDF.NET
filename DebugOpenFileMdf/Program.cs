@@ -6,54 +6,7 @@ var filename = ShowDialog();
 try
 {
     var bytes = File.ReadAllBytes(filename);
-    //var lists = new List<byte>(bytes);
-    var samebytes = new byte[0];
     var mdf = new Mdf(bytes);
-    
-    var list = new List<ChannelBlock>();
-
-
-    for (int i = 0; i < mdf.DataGroups.Count; i++)
-    {
-        var group = mdf.DataGroups[i];
-        for (int j = 0; j < group.ChannelGroups.Count; j++)
-        {
-            var channelGroup = group.ChannelGroups[j];
-            for (int k = 0; k < channelGroup.Channels.Count; k++)
-            {
-                var channelBlock = channelGroup.Channels[k];
-                list.Add(channelBlock);
-            }
-        }
-    }
-    list.Sort((x, y) => x.ToString().CompareTo(y.ToString()));
-    //list.RemoveAt(1);
-    var indexs = new int[] { 1, 2, 3, 4, 5 };
-    var listRemoved = list.Where((x, i) => indexs.Contains(i)).ToArray();
-    var anotherChannels = list.Where(x => !listRemoved.Contains(x)).ToArray();
-
-
-    samebytes = mdf.RemoveChannel(anotherChannels);
-    //var newmdf = new Mdf(samebytes);
-    var listValues = new List<double>();
-
-    //for (int i = 0; i < mdf.DataGroups.Count; i++)
-    //{
-    //    var group = mdf.DataGroups[i];
-    //    var records = group.Records;
-    //    for (int j = 0; j < records.Length; j++)
-    //    {
-    //        var value = records[j].GetValue(list[1]);
-    //        if (value == null)
-    //            continue;
-    //        listValues.Add(Convert.ToDouble(value));
-    //    }
-    //}
-
-    var ex = Path.GetExtension(filename);
-    var file = Path.GetFileNameWithoutExtension(filename) + "Test";
-    var path = Path.GetDirectoryName(filename) + "\\" + file + ex;
-    File.WriteAllBytes(path, samebytes);
 }
 catch (Exception e)
 {
