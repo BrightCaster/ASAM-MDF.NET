@@ -63,6 +63,17 @@
             Array.Copy(bytesSize, 0, array, index + 2, bytesSize.Length);
         }
 
+        internal virtual void Write(List<byte> array)
+        {
+            var size = array.Count;
+
+            var bytesIdentifier = Encoding.UTF8.GetBytes(Identifier);
+            var bytesSize = BitConverter.GetBytes(size);
+
+            array.InsertRange(0, bytesIdentifier);
+            array.InsertRange(1, bytesSize);
+        }
+
         /// <summary>
         /// Sets the string value.
         /// </summary>

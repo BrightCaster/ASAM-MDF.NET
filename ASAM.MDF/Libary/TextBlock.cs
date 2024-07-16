@@ -1,6 +1,7 @@
 ﻿namespace ASAM.MDF.Libary
 {
     using System;
+    using System.Collections.Generic;
     using System.Drawing;
     using System.IO;
     using System.Linq;
@@ -84,6 +85,18 @@
             Array.Copy(bytesText, 0, array, index + 4, bytesText.Length);
 
             index += GetSize();
+        }
+        internal override void Write(List<byte> array)
+        {
+            var newList = new List<byte>(); 
+
+            var bytesText = Mdf.IDBlock.Encoding.GetBytes(Text);
+            
+            newList.AddRange(bytesText);
+
+            base.Write(newList);
+
+            array.AddRange(newList);
         }
     }
 }

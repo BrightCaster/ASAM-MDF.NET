@@ -425,6 +425,44 @@
 
             index += GetSize();
         }
+        internal override void Write(List<byte> array)
+        {
+            var newList = new List<byte>();
+
+            var bytesNextGroupBlock = BitConverter.GetBytes(ptrNextDataGroup.address);
+            newList.AddRange(bytesNextGroupBlock);
+
+            WriteFirstChannelGroupBlockLink(newList);
+            WriteTriggerBlockLink(newList);
+            WriteDataBlockLink(newList);
+
+            var bytesNumChannelGroups = BitConverter.GetBytes(ChannelGroups.Count);
+            var bytesNumRecordsIds = BitConverter.GetBytes(NumRecordIds);
+            var bytesReserved = BitConverter.GetBytes(Reserved);
+
+            newList.AddRange(bytesNumChannelGroups);
+            newList.AddRange(bytesNumRecordsIds);
+            newList.AddRange(bytesReserved);
+
+            base.Write(newList);
+
+            array.AddRange(newList);
+        }
+
+        internal void WriteDataBlockLink(List<byte> newList)
+        {
+            var bytesDataBlockLink = BitConverter.GetBytes(ptrDataBlock.address);
+
+            newList.AddRange(bytesDataBlockLink);
+        }
+
+        internal void WriteTriggerBlockLink(List<byte> newList)
+        {
+            var bytesTriggerBlockLink = BitConverter.GetBytes(ptrTriggerBlock.address);
+
+            newList.AddRange(bytesTriggerBlockLink);
+        }
+
         internal void WriteChannelGroups(byte[] array, ref int index)
         {
             ChannelGroups.Write(array, ref index);
@@ -434,6 +472,12 @@
             var bytesFirst = BitConverter.GetBytes(index);
 
             Array.Copy(bytesFirst, 0, array, blockIndex + 8, bytesFirst.Length);
+        }
+        internal void WriteFirstChannelGroupBlockLink(List<byte> array)
+        {
+            var bytesFirst = BitConverter.GetBytes(ptrFirstChannelGroupBlock.address);
+
+            array.AddRange(bytesFirst);
         }
         internal void WriteNextBlockLink(byte[] array, int index, int blockIndex)
         {

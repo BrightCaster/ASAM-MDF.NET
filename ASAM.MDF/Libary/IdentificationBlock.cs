@@ -1,6 +1,7 @@
 ﻿namespace ASAM.MDF.Libary
 {
     using System;
+    using System.Collections.Generic;
     using System.IO;
     using System.Text;
 
@@ -211,6 +212,29 @@
             Array.Copy(bytesReserved2, 0, array, index + 34, bytesReserved2.Length);
 
             index += GetSize();
+        }
+
+        internal void Write(List<byte> array)
+        {
+            var bytesFileIdentifier = Encoding.UTF8.GetBytes(FileIdentifier);
+            var bytesFormatIdentifier = Encoding.UTF8.GetBytes(FormatIdentifier);
+            var bytesProgramIdentifier = Encoding.UTF8.GetBytes(ProgramIdentifier);
+            var bytesByteOrder = BitConverter.GetBytes((ushort)ByteOrder);
+            var bytesFloatingPointFormat = BitConverter.GetBytes((ushort)FloatingPointFormat);
+            var bytesVersion = BitConverter.GetBytes(Version);
+            var bytesCodePage = BitConverter.GetBytes(CodePage);
+            var bytesReserved1 = Encoding.UTF8.GetBytes(Reserved1);
+            var bytesReserved2 = Encoding.UTF8.GetBytes(Reserved2);
+
+            array.AddRange(bytesFileIdentifier);
+            array.AddRange(bytesFormatIdentifier);
+            array.AddRange(bytesProgramIdentifier);
+            array.AddRange(bytesByteOrder);
+            array.AddRange(bytesFloatingPointFormat);
+            array.AddRange(bytesVersion);
+            array.AddRange(bytesCodePage);
+            array.AddRange(bytesReserved1);
+            array.AddRange(bytesReserved2);
         }
 
         /// <summary>

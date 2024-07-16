@@ -329,6 +329,44 @@
                 index += 44;
             }
         }
+        internal override void Write(List<byte> array)
+        {
+            var newList = new List<byte>();
+
+            var bytesFirstDataGroup = BitConverter.GetBytes(ptrFirstDataGroup.address);
+            newList.AddRange(bytesFirstDataGroup);
+
+            WriteFileComment(newList);
+            WriteProgramBlock(newList);
+
+            var bytesDataGroupsCount = BitConverter.GetBytes(Mdf.DataGroups.Count);
+            var bytesDate = Mdf.IDBlock.Encoding.GetBytes(Date);
+            var bytesTime = Mdf.IDBlock.Encoding.GetBytes(Time);
+            var bytesAuthor = Mdf.IDBlock.Encoding.GetBytes(Author);
+            var bytesOrganization = Mdf.IDBlock.Encoding.GetBytes(Organization);
+            var bytesProject = Mdf.IDBlock.Encoding.GetBytes(Project);
+            var bytesSubject = Mdf.IDBlock.Encoding.GetBytes(Subject);
+            var bytesTimestamp = BitConverter.GetBytes(TimeStamp);
+            var bytesUtcTimeOffset = BitConverter.GetBytes(UTCTimeOffset);
+            var bytesTimeQuality = BitConverter.GetBytes((ushort)TimeQuality);
+            var bytesTimeIdentification = Mdf.IDBlock.Encoding.GetBytes(TimerIdentification);
+
+            newList.AddRange(bytesDataGroupsCount);
+            newList.AddRange(bytesDate);
+            newList.AddRange(bytesTime);
+            newList.AddRange(bytesAuthor);
+            newList.AddRange(bytesOrganization);
+            newList.AddRange(bytesProject);
+            newList.AddRange(bytesSubject);
+            newList.AddRange(bytesTimestamp);
+            newList.AddRange(bytesUtcTimeOffset);
+            newList.AddRange(bytesTimeQuality);
+            newList.AddRange(bytesTimeIdentification);
+
+            base.Write(newList);
+
+            array.AddRange(newList);
+        }
         internal void WriteFirstDataGroupLink(byte[] array, int index, int baseIndex)
         {
             var bytesFirstDataGroupLink = BitConverter.GetBytes(index);
@@ -345,6 +383,16 @@
 
             FileComment.Write(array, ref index);
         }
+        internal void WriteFileComment(List<byte> array)
+        {
+            if (FileComment == null) return;
+
+            var bytesFileCommentLink = BitConverter.GetBytes(FileComment.BlockAddress);
+
+            array.AddRange(bytesFileCommentLink);
+
+            FileComment.Write(array);
+        }
         internal void WriteProgramBlock(byte[] array, ref int index, int baseIndex)
         {
             if (ProgramBlock == null) return;
@@ -354,6 +402,16 @@
             Array.Copy(bytesProgramLink, 0, array, baseIndex + 12, bytesProgramLink.Length);
 
             ProgramBlock.Write(array, ref index);
+        }
+        internal void WriteProgramBlock(List<byte> array)
+        {
+            if (ProgramBlock == null) return;
+
+            var bytesProgramLink = BitConverter.GetBytes(ProgramBlock.BlockAddress);
+
+            array.AddRange(bytesProgramLink);
+
+            ProgramBlock.Write(array);
         }
         internal override void ReadV4()
         {
