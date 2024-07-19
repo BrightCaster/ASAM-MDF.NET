@@ -222,6 +222,10 @@
             }
         }
 
+        internal override ushort GetSize()
+        {
+            return 30;
+        }
         internal override int GetSizeTotal()
         {
             var size = base.GetSizeTotal();

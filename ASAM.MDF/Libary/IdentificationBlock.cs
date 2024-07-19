@@ -187,7 +187,7 @@
 
         internal int GetSize()
         {
-            return Size;
+            return 64;
         }
         internal void Write(byte[] array, ref int index)
         {

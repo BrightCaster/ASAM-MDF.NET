@@ -288,6 +288,13 @@
             }
         }
 
+        internal override ushort GetSize()
+        {
+            if (Mdf.IDBlock.Version >= 320)
+                return 208;
+
+            return 164;
+        }
         internal override int GetSizeTotal()
         {
             return GetSize() + FileComment.GetSizeSafe() + ProgramBlock.GetSizeSafe();

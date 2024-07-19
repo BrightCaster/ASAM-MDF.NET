@@ -92,24 +92,6 @@
             return array;
         }
 
-        public byte[] GetBytesMdf()
-        {
-            int index = 0;
-            var arrayList = new List<byte>();
-
-            IDBlock.Write(arrayList);
-
-            int hdBlockIndex = index;
-
-            // HDBLOCK.
-            HDBlock.Write(arrayList);
-
-            // DGBLOCKs.
-            DataGroups.Write(arrayList);
-
-            return array;
-        }
-
 
         /// <summary>
         /// 

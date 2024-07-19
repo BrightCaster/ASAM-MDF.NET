@@ -71,36 +71,6 @@
         }
         internal void Write(List<byte> array)
         {
-            var blockIndexes = new int[Count];
-
-            DataGroupBlock prev = null;
-            int prevIndex = 0;
-
-            // Write block info.
-            for (int i = 0; i < Count; i++)
-            {
-                var block = items[i];
-
-                block.Write(array);
-            }
-
-            // Write channel groups.
-            var firstChannelGroupIndex = index;
-            for (int i = 0; i < Count; i++)
-            {
-                var block = items[i];
-
-                block.WriteChannelGroups(array, ref index);
-                block.WriteFirstChannelGroupBlockLink(array, firstChannelGroupIndex, blockIndexes[i]);
-            }
-
-            // Write records.
-            for (int i = 0; i < Count; i++)
-            {
-                var block = items[i];
-
-                block.WriteRecords(array);
-            }
         }
 
         // IList.

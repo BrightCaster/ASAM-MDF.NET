@@ -32,7 +32,7 @@
 
         internal virtual ushort GetSize()
         {
-            return (ushort)Size;
+            return 0;
         }
         internal virtual int GetSizeTotal()
         {

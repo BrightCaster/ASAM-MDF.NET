@@ -337,6 +337,19 @@
         {
             return SignalName;
         }
+        internal override ushort GetSize()
+        {
+            // Base size.
+            if (Mdf.IDBlock.Version < 212)
+                return 218;
+
+            // 2.12
+            if (Mdf.IDBlock.Version < 300)
+                return 222;
+
+            // 3.00
+            return 228;
+        }
 
         internal override int GetSizeTotal()
         {

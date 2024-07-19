@@ -392,6 +392,11 @@
             return recordsList.ToArray();
         }
 
+        internal override ushort GetSize()
+        {
+            return 28;
+        }
+
         internal override int GetSizeTotal()
         {
             var size = base.GetSizeTotal();
