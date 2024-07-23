@@ -260,8 +260,8 @@
             if (ptrTextBlockCommentV4.address != 0)
                 Comment = TextBlock.Read(Mdf, (int)ptrTextBlockCommentV4.address);
 
-            if (ptrLongSignalNameV4.address != 0)
-                LongSignalName = TextBlock.Read(Mdf, (int)ptrLongSignalNameV4.address);
+            //if (ptrLongSignalNameV4.address != 0)
+                //LongSignalName = TextBlock.Read(Mdf, (int)ptrLongSignalNameV4.address);
 
             if (channelConversion == null && ptrChannelConversionBlockV4.address != 0)
                 ChannelConversion = ChannelConversionBlock.Read(Mdf, (int)ptrChannelConversionBlockV4.address);
