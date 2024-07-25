@@ -412,6 +412,16 @@
 
             ChannelConversion.Write(array, ref index);
         }
+        internal void WriteLongSignalName(byte[] array, ref int index, int blockIndex)
+        {
+            if (ptrLongSignalName == null || Mdf.IDBlock.Version < 212)
+                return;
+            var bytesptrLongSignalName = BitConverter.GetBytes(index);
+
+            Array.Copy(bytesptrLongSignalName, 0, array, blockIndex + ptrChannelComment.offset + 2 + 32 + 128 + 2 + 2 + 2 + 2 + 16 + 8, bytesptrLongSignalName.Length);
+
+            LongSignalName.Write(array, ref index);
+        }
         internal void WriteNextChannelLink(byte[] array, int index, int blockIndex)
         {
             var bytesNextChannelLink = BitConverter.GetBytes(index);
