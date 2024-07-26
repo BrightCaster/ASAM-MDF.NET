@@ -383,7 +383,6 @@
 
             if (Mdf.IDBlock.Version >= 300)
             {
-                // TODO: DisplayName.
                 var bytesAdditionalOffset = BitConverter.GetBytes(AdditionalByteOffset);
 
                 Array.Copy(bytesAdditionalOffset, 0, array, index + 226, bytesAdditionalOffset.Length);
