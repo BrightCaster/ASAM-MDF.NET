@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using System.Linq;
     using System.Text;
 
     using ASAM.MDF.Libary.Types;
@@ -201,6 +202,12 @@
             var bytesReserved1 = Encoding.UTF8.GetBytes(Reserved1);
             var bytesReserved2 = Encoding.UTF8.GetBytes(Reserved2);
 
+            ValidateEncodingLength(ref bytesFileIdentifier, 8);
+            ValidateEncodingLength(ref bytesFormatIdentifier, 8);
+            ValidateEncodingLength(ref bytesProgramIdentifier, 8);
+            ValidateEncodingLength(ref bytesReserved1, 2);
+            ValidateEncodingLength(ref bytesReserved2, 30);
+
             Array.Copy(bytesFileIdentifier, 0, array, index, bytesFileIdentifier.Length);
             Array.Copy(bytesFormatIdentifier, 0, array, index + 8, bytesFormatIdentifier.Length);
             Array.Copy(bytesProgramIdentifier, 0, array, index + 16, bytesProgramIdentifier.Length);
@@ -263,6 +270,11 @@
         private static string GetString(Mdf mdf, int count)
         {
             return Encoding.UTF8.GetString(mdf.Data, mdf.AdvanceIndex(count), count);
+        }
+        public void ValidateEncodingLength(ref byte[] bytes, int countConstraints)
+        {
+            if (bytes.Length > countConstraints)
+                bytes = bytes.Take(countConstraints).ToArray();
         }
     }
 }

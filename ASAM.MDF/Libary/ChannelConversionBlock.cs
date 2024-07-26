@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.IO;
+    using System.Linq;
     using System.Security.Cryptography;
     using ASAM.MDF.Libary.Types;
 
@@ -146,6 +147,8 @@
             var bytesMaxValue = BitConverter.GetBytes(MaxPhysicalValue);
             var bytesPhyUnit = Mdf.IDBlock.Encoding.GetBytes(PhysicalUnit);
             var bytesConversionType = BitConverter.GetBytes((ushort)ConversionType);
+
+            ValidateEncodingLength(ref bytesPhyUnit, 20);
             
             Array.Copy(bytesValueRange, 0, array, index + 4, bytesValueRange.Length);
             Array.Copy(bytesMinValue, 0, array, index + 6, bytesMinValue.Length);

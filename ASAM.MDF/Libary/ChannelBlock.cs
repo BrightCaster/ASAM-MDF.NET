@@ -2,7 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
-
+    using System.Linq;
     using ASAM.MDF.Libary.Types;
 
     public class ChannelBlock : Block, INext<ChannelBlock>, IPrevious<ChannelBlock>, IParent<ChannelGroupBlock>
@@ -370,7 +370,7 @@
         internal override void Write(byte[] array, ref int index)
         {
             base.Write(array, ref index);
-
+            
             var bytesChannelType = BitConverter.GetBytes((ushort)TypeV3);
             var bytesSignalName = Mdf.IDBlock.Encoding.GetBytes(SignalName);
             var bytesSignalDesc = Mdf.IDBlock.Encoding.GetBytes(SignalDescription);
@@ -381,6 +381,9 @@
             var bytesMinValue = BitConverter.GetBytes(MinValue);
             var bytesMaxValue = BitConverter.GetBytes(MaxValue);
             var bytesSampleRate = BitConverter.GetBytes(SampleRate);
+
+            ValidateEncodingLength(ref bytesSignalName, 32);
+            ValidateEncodingLength(ref bytesSignalDesc, 128);
 
             Array.Copy(bytesChannelType, 0, array, index + 24, bytesChannelType.Length);
             Array.Copy(bytesSignalName, 0, array, index + 26, bytesSignalName.Length);

@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using ASAM.MDF.Libary.Types;
 
     public class HeaderBlock : Block
@@ -315,6 +316,15 @@
             var bytesUtcTimeOffset = BitConverter.GetBytes(UTCTimeOffset);
             var bytesTimeQuality = BitConverter.GetBytes((ushort)TimeQuality);
             var bytesTimeIdentification = Mdf.IDBlock.Encoding.GetBytes(TimerIdentification);
+
+            ValidateEncodingLength(ref bytesDate, 10);
+            ValidateEncodingLength(ref bytesTime, 8);
+            ValidateEncodingLength(ref bytesAuthor, 32);
+            ValidateEncodingLength(ref bytesOrganization, 32);
+            ValidateEncodingLength(ref bytesProject, 32);
+            ValidateEncodingLength(ref bytesSubject, 32);
+            ValidateEncodingLength(ref bytesTimeIdentification, 32);
+
 
             Array.Copy(bytesDataGroupsCount, 0, array, index + 16, bytesDataGroupsCount.Length);
             Array.Copy(bytesDate, 0, array, index + 18, bytesDate.Length);

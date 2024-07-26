@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Text;
 
     /// <summary>
@@ -59,6 +60,8 @@
             var bytesIdentifier = Encoding.UTF8.GetBytes(Identifier);
             var bytesSize = BitConverter.GetBytes(GetSize());
 
+            ValidateEncodingLength(ref bytesIdentifier, 2);
+            
             Array.Copy(bytesIdentifier, 0, array, index, bytesIdentifier.Length);
             Array.Copy(bytesSize, 0, array, index + 2, bytesSize.Length);
         }
@@ -112,6 +115,11 @@
             Reserved = Mdf.ReadU32();
             Size = Mdf.ReadU64();
             LinksCount = Mdf.ReadU64();
+        }
+        public void ValidateEncodingLength(ref byte[] bytes, int countConstraints)
+        {
+            if (bytes.Length > countConstraints)
+                bytes = bytes.Take(countConstraints).ToArray();
         }
     }
 }
