@@ -356,6 +356,15 @@
             if (channelConversion != null)
                 size += channelConversion.GetSizeTotal();
 
+            if (Comment != null)
+                size += Comment.GetSizeTotal();
+
+            if (LongSignalName != null)
+                size += LongSignalName.GetSizeTotal();
+
+            if (DisplayName != null)
+                size += DisplayName.GetSizeTotal();
+
             return size;
         }
         internal override void Write(byte[] array, ref int index)
@@ -393,6 +402,17 @@
 
             index += GetSize();
         }
+        internal void WriteComment(byte[] array, ref int index, int blockIndex)
+        {
+            if (Comment == null)
+                return;
+
+            var bytesComment = BitConverter.GetBytes(index);
+
+            Array.Copy(bytesComment, 0, array, blockIndex + 20, bytesComment.Length);
+
+            Comment.Write(array, ref index);
+        }
         internal void WriteChannelConversion(byte[] array, ref int index, int blockIndex)
         {
             if (channelConversion == null)
@@ -406,24 +426,26 @@
         }
         internal void WriteLongSignalName(byte[] array, ref int index, int blockIndex)
         {
-            if (ptrLongSignalName == null || Mdf.IDBlock.Version < 212)
+            if (LongSignalName == null || Mdf.IDBlock.Version < 212)
                 return;
 
             var bytesptrLongSignalName = BitConverter.GetBytes(index);
 
-            Array.Copy(bytesptrLongSignalName, 0, array, blockIndex + ptrLongSignalName.offset, bytesptrLongSignalName.Length);
+            var offset = 20 + 2 + 32 + 128 + 2 + 2 + 2 + 2 + 16 + 8;
+
+            Array.Copy(bytesptrLongSignalName, 0, array, blockIndex + offset, bytesptrLongSignalName.Length);
 
             LongSignalName.Write(array, ref index);
         }
         internal void WriteDisplayName(byte[] array, ref int index, int blockIndex)
         {
-            if (ptrDisplayName == null || Mdf.IDBlock.Version < 300)
+            if (DisplayName == null || Mdf.IDBlock.Version < 300)
                 return;
 
             var bytesptrDisplayName = BitConverter.GetBytes(index);
-            var offset = ptrChannelComment.offset + 2 + 32 + 128 + 2 + 2 + 2 + 2 + 16 + 8;
+            var offset = 20 + 2 + 32 + 128 + 2 + 2 + 2 + 2 + 16 + 8;
 
-            if (ptrLongSignalName != null && ptrLongSignalName.address != 0)
+            if (LongSignalName != null)
                 offset += 4;
 
             Array.Copy(bytesptrDisplayName, 0, array, blockIndex + offset, bytesptrDisplayName.Length);

@@ -74,7 +74,7 @@
 
         internal override ushort GetSize()
         {
-            return (ushort)(4 + Text.Length);
+            return (ushort)(4 + Mdf.IDBlock.Encoding.GetBytes(Text).Length);
         }
         internal override void Write(byte[] array, ref int index)
         {
