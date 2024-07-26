@@ -63,6 +63,7 @@
                 block.Write(array, ref index);
                 block.WriteChannelConversion(array, ref index, prevIndex);
                 block.WriteLongSignalName(array, ref index, prevIndex);
+                block.WriteDisplayName(array, ref index, prevIndex);
             }
         }
 

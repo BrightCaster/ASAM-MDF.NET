@@ -2,7 +2,6 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Linq;
 
     using ASAM.MDF.Libary.Types;
 
@@ -37,7 +36,6 @@
         internal PointerAddress<ulong> ptrChannelExtensionBlockV4;
         internal PointerAddress<ulong> ptrChannelDependencyBlockV4;
         internal PointerAddress<ulong> ptrChannelCommentV4;
-        internal PointerAddress<ulong> ptrLongSignalNameV4;
         internal PointerAddress<ulong> ptrDisplayNameV4;
         internal PointerAddress<ulong> ptrComponentAddressV4;
         internal PointerAddress<ulong> ptrTextBlockChanelNameV4;
@@ -260,9 +258,6 @@
             if (ptrTextBlockCommentV4.address != 0)
                 Comment = TextBlock.Read(Mdf, (int)ptrTextBlockCommentV4.address);
 
-            //if (ptrLongSignalNameV4.address != 0)
-                //LongSignalName = TextBlock.Read(Mdf, (int)ptrLongSignalNameV4.address);
-
             if (channelConversion == null && ptrChannelConversionBlockV4.address != 0)
                 ChannelConversion = ChannelConversionBlock.Read(Mdf, (int)ptrChannelConversionBlockV4.address);
         }
@@ -386,11 +381,6 @@
             Array.Copy(bytesMaxValue, 0, array, index + 202, bytesMaxValue.Length);
             Array.Copy(bytesSampleRate, 0, array, index + 210, bytesSampleRate.Length);
 
-            if (Mdf.IDBlock.Version >= 212)
-            {
-                // TODO: LongSignalName.
-            }
-
             if (Mdf.IDBlock.Version >= 300)
             {
                 // TODO: DisplayName.
@@ -416,11 +406,27 @@
         {
             if (ptrLongSignalName == null || Mdf.IDBlock.Version < 212)
                 return;
+
             var bytesptrLongSignalName = BitConverter.GetBytes(index);
 
-            Array.Copy(bytesptrLongSignalName, 0, array, blockIndex + ptrChannelComment.offset + 2 + 32 + 128 + 2 + 2 + 2 + 2 + 16 + 8, bytesptrLongSignalName.Length);
+            Array.Copy(bytesptrLongSignalName, 0, array, blockIndex + ptrLongSignalName.offset, bytesptrLongSignalName.Length);
 
             LongSignalName.Write(array, ref index);
+        }
+        internal void WriteDisplayName(byte[] array, ref int index, int blockIndex)
+        {
+            if (ptrDisplayName == null || Mdf.IDBlock.Version < 300)
+                return;
+
+            var bytesptrDisplayName = BitConverter.GetBytes(index);
+            var offset = ptrChannelComment.offset + 2 + 32 + 128 + 2 + 2 + 2 + 2 + 16 + 8;
+
+            if (ptrLongSignalName != null && ptrLongSignalName.address != 0)
+                offset += 4;
+
+            Array.Copy(bytesptrDisplayName, 0, array, blockIndex + offset, bytesptrDisplayName.Length);
+
+            DisplayName.Write(array, ref index);
         }
         internal void WriteNextChannelLink(byte[] array, int index, int blockIndex)
         {
