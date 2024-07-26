@@ -71,7 +71,7 @@
         public ChannelConversionBlock ChannelConversion { get => channelConversion; set => channelConversion = value; }
         public ChannelExtensionBlock SourceDepending { get; private set; }
         public ChannelDependencyBlock Dependency { get; private set; }
-        public TextBlock Comment { get; private set; }
+        public TextBlock Comment { get; set; }
         public ChannelTypeV3 TypeV3 { get; set; }
         public ChannelTypeV4 TypeV4 { get; set; }
 
@@ -190,6 +190,9 @@
 
             if (ptrLongSignalName != null && ptrLongSignalName.address != 0)
                 LongSignalName = TextBlock.Read(Mdf, (int)ptrLongSignalName.address);
+
+            if (ptrChannelComment.address != 0)
+                Comment = TextBlock.Read(Mdf, (int)ptrChannelComment.address);
 
             if (channelConversion == null && ptrChannelConversionBlock.address != 0)
                 ChannelConversion = ChannelConversionBlock.Read(Mdf, (int)ptrChannelConversionBlock.address);
