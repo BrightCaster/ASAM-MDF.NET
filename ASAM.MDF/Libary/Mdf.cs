@@ -6,8 +6,8 @@
 
     public class Mdf
     {
-        internal int position;
-        internal byte[] data;
+        internal int position; //like stream position
+        internal byte[] data;// data bytes
 
         /// <summary>
         /// Read MDF from stream.
@@ -35,10 +35,14 @@
 
         internal byte[] Data => data;
 
+        /// <summary>
+        /// Removing channels from mdf
+        /// </summary>
+        /// <param name="channelBlocks">An array of channels to delete</param>
+        /// <returns>New file byte array</returns>
         public byte[] RemoveChannel(ChannelBlock[] channelBlocks)
         {
             var array = CheckChannelTimes(channelBlocks);
-            //var bytes = new byte[Data.Length];
             var bytes = new List<byte>(Data);
             var copiedMDF = new Mdf(bytes.ToArray());
             var BlockAddresses = array.Select(x => x.BlockAddress);
@@ -68,7 +72,10 @@
         {
             return channelBlocks.Where(x => x.TypeV3 != Types.ChannelTypeV3.Time).ToArray();
         }
-
+        /// <summary>
+        /// Converting an array from mdf to a bytes file. Not supported version 4
+        /// </summary>
+        /// <returns>byte array</returns>
         public byte[] GetBytes()
         {
             var array = new byte[GetSize()];
@@ -94,9 +101,10 @@
 
 
         /// <summary>
-        /// 
+        /// Updating the data addresses of all blocks after deletion
         /// </summary>
-        /// <param name="prevDataBytes">None deleted data</param>
+        /// <param name="data">new data bytes</param>
+        /// <param name="countDeleted">count deleted bytes</param>
         /// <param name="indexDeleted">Index start deleted on prevDataBytes</param>
         internal void UpdateAddresses(List<byte> data, ulong countDeleted, int indexDeleted)
         {
@@ -143,7 +151,9 @@
                 }
             }
         }
-
+        /// <summary>
+        /// We get the maximum possible file size
+        /// </summary>
         internal int GetSize()
         {
             var size = 0;
